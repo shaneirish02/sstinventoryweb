@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h2 class="dashboard-title">Overview</h2>
+
+    <!-- Dashboard Overview Section -->
+    <section class="section-card">
+       
+        <div class="stats-grid">
+            
+            <!-- Total Items -->
+            <a href="{% url 'inventory_management' %}" class="stat-card gradient-purple">
+                <div class="stat-icon"><i class="fas fa-box"></i></div>
+                <h4>Total Items</h4>
+                <p>{{ total_items }}</p>
+            </a>
+
+            <!-- Total Sales -->
+            <a href="{% url 'sales_report' %}" class="stat-card gradient-green">
+                <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+                <h4>Total Sales</h4>
+                <p>${{ total_sales }}</p>
+            </a>
+
+            <!-- Total Categories -->
+            <a href="{% url 'category_management' %}" class="stat-card gradient-orange">
+                <div class="stat-icon"><i class="fas fa-tags"></i></div>
+                <h4>Total Categories</h4>
+                <p>{{ total_categories }}</p>
+            </a>
+
+            <!-- Total Users -->
+            <a href="{% url 'user_management' %}" class="stat-card gradient-lime">
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                <h4>Total Users</h4>
+                <p>{{ total_users }}</p>
+            </a>
+
+        </div>
+    </section>
+</div>
+
+<!-- Font Awesome CDN for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+
+
+    .dashboard-container {
+        padding: 40px;
+        max-width: 1200px;
+        margin: auto;
+    }
+
+    .dashboard-title {
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 50px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 24px;
+    }
+
+    .stat-card {
+        border-radius: 20px;
+        color: #fff;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        transition: transform 0.2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-icon {
+        font-size: 2rem;
+        margin-bottom: 20px;
+    }
+
+    .gradient-purple {
+        background: linear-gradient(135deg, #9b4de0, #5f73ec);
+    }
+
+    .gradient-green {
+        background: linear-gradient(135deg, #00c853, #00e676);
+    }
+
+    .gradient-orange {
+        background: linear-gradient(135deg, #ff6f00, #ff8f00);
+    }
+
+    .gradient-lime {
+        background: linear-gradient(135deg, #76ff03, #b2ff59);
+    }
+
+    @media (max-width: 600px) {
+        .dashboard-title {
+            font-size: 1.8rem;
+        }
+
+        .stat-card h4 {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}

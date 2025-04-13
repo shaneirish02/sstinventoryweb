@@ -1,0 +1,191 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SST INVENTORY SYSTEM POS</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #102E50;     /* Deep blue - primary buttons or nav highlights */
+            --accent: #F5C45E;      /* Warm golden yellow - secondary buttons or accents */
+            --highlight: #E78B48;   /* Soft orange - text accents or muted UI elements */
+            --light-bg: rgb(252, 252, 252);  /* Beige sand - background sections */
+            --card-bg: #EAE7DC;     /* Soft off-white - card/form background */
+            --hover-bg: #F2DDD1;    /* Optional: light peach for hover states or table rows */
+            --text-color: #2C2C2C;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+        }
+
+        header {
+            background-color: var(--accent);
+            color: #fff;
+            padding: 10px;
+            font-size: 20px;
+            text-align: left;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 100%;
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+             font-weight: bold;
+        }
+
+
+        .sidebar {
+            height: 100vh;
+            width: 260px;
+            position: fixed;
+            top: 44px;
+            left: 0;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-container {
+            text-align: center;
+        }
+
+        .logo-container img {
+            width: 120px;
+            height: auto;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+
+        .logo-container h1 {
+            font-size: 20px;
+            font-weight: 500;
+            color: #ffffff;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            width: 90%;
+            padding: 12px 20px;
+            margin: 5px 0;
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar a i {
+            margin-right: 15px;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background-color: var(--highlight);
+        }
+
+        .container {
+            margin-left: 270px;
+            padding: 30px;
+        }
+
+        
+
+        
+
+        .btn {
+            background-color: var(--hover-bg);
+            color: var(--primary);
+            padding: 10px 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #fdf0c4;
+        }
+
+        .form-container {
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: space-around;
+                height: auto;
+            }
+
+            .container {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .logo-container img {
+                width: 60px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>SST INVENTORY SYSTEM POS</header>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Logo Section -->
+        <div class="logo-container">
+            <img src="{% static 'images/sstlogo.png' %}" alt="SST Logo">
+        </div>
+
+        <!-- Navigation -->
+        <a href="{% url 'admin_dashboard' %}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="{% url 'inventory_management' %}"><i class="fas fa-boxes"></i> Inventory</a>
+        <a href="{% url 'add_item' %}"><i class="fas fa-plus-circle"></i> Add Item</a>
+        <a href="{% url 'sales_report' %}"><i class="fas fa-chart-line"></i> Sales Report</a>
+        <a href="{% url 'category_management' %}"><i class="fas fa-tags"></i> Categories</a>
+        <a href="{% url 'user_management' %}"><i class="fas fa-users"></i> User Management</a>
+        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        {% block content %}
+        <!-- Page-specific content goes here -->
+        {% endblock %}
+    </div>
+
+    
+
+</body>
+</html>

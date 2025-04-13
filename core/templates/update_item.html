@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container">
+        <div class="form-container">
+            <h2>Update Item</h2>
+            <form method="POST" class="update-form">
+                {% csrf_token %}
+                
+                <!-- Form fields rendered dynamically with proper styling -->
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}">Name</label>
+                    {{ form.name }}  <!-- Renders the 'name' field -->
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.category.id_for_label }}">Category</label>
+                    {{ form.category }}  <!-- Renders the 'category' field -->
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.description.id_for_label }}">Description</label>
+                    {{ form.description }}  <!-- Renders the 'description' field -->
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.quantity.id_for_label }}">Quantity</label>
+                    {{ form.quantity }}  <!-- Renders the 'quantity' field -->
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.price.id_for_label }}">Price</label>
+                    {{ form.price }}  <!-- Renders the 'price' field -->
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-submit">
+                    <button type="submit" class="btn update-btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        /* General container style */
+        .container {
+            margin-top: 40px;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .form-container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        .form-container h2 {
+            font-size: 2rem;
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        /* Form Group Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+            color: #333;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: #008585;
+            outline: none;
+        }
+
+        .form-submit {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .update-btn {
+            background-color: #008585;
+            color: white;
+            padding: 14px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            max-width: 220px;
+        }
+
+        .update-btn:hover {
+            background-color: #004343;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 25px;
+                margin: 20px;
+            }
+
+            .form-container h2 {
+                font-size: 1.6rem;
+                margin-bottom: 15px;
+            }
+
+            .form-group input, .form-group select {
+                font-size: 0.95rem;
+                padding: 10px 15px;
+            }
+
+            .update-btn {
+                font-size: 1rem;
+                padding: 12px 25px;
+            }
+        }
+    </style>
+{% endblock %}

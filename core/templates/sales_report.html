@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="report-container">
+        <h1 class="report-title">Sales Report</h1>
+
+        <div class="sales-buttons">
+            <!-- Buttons to select sales period -->
+            <button class="btn period-btn" onclick="showSales('today')">
+                <i class="fas fa-calendar-day"></i> Today's Sales
+            </button>
+            <button class="btn period-btn" onclick="showSales('week')">
+                <i class="fas fa-calendar-week"></i> This Week's Sales
+            </button>
+            <button class="btn period-btn" onclick="showSales('month')">
+                <i class="fas fa-calendar-alt"></i> This Month's Sales
+            </button>
+            <button class="btn period-btn" onclick="showSales('year')">
+                <i class="fas fa-calendar-year"></i> Annual Sales
+            </button>
+        </div>
+
+        <div class="sales-summary card">
+            <!-- Display selected period's sales data -->
+            <div id="salesDetails">
+                <h3>{{ selected_period }} Sales</h3>
+                <p class="total-sales"><strong>Total Sales: </strong>${{ total_sales }}</p>
+
+                <table class="sales-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Item Name</th>
+                            <th>Price Per Item</th>
+                            <th>Quantity Sold</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in sales_data %}
+                            <tr>
+                                <td>{{ sale.date }}</td>
+                                <td>{{ sale.item.name }}</td>
+                                <td class="numeric">{{ sale.item.price }}</td>
+                                <td class="numeric">{{ sale.quantity }}</td>
+                                <td class="numeric">{{ sale.total_price }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5">No sales data for the selected period.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .report-container {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 50px auto;
+        }
+
+        .report-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 40px;
+            color: #333;
+        }
+
+        .sales-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .period-btn {
+            background-color: #008585;
+            color: white;
+            padding: 14px 24px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+        }
+
+        .period-btn:hover {
+            background-color: #004343;
+            transform: translateY(-3px);
+        }
+
+        .period-btn i {
+            font-size: 1.3rem;
+        }
+
+        .sales-summary {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
+        }
+
+        .sales-summary h3 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .total-sales {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #008585;
+            margin-bottom: 30px;
+        }
+
+        .sales-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            font-size: 1.1rem;
+        }
+
+        .sales-table thead {
+            background-color: #008585;
+            color: white;
+        }
+
+        .sales-table th,
+        .sales-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .sales-table th {
+            text-transform: uppercase;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .sales-table td.numeric {
+            text-align: right;
+        }
+
+        .sales-table tbody tr:nth-child(even) {
+            background-color: #f4f4f4;
+        }
+
+        .sales-table tbody tr:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+
+        .sales-table tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        @media (max-width: 768px) {
+            .sales-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .period-btn {
+                width: 100%;
+                padding: 14px;
+                margin-bottom: 12px;
+            }
+
+            .sales-summary {
+                padding: 25px;
+            }
+
+            .sales-table th, .sales-table td {
+                font-size: 1rem;
+                padding: 12px;
+            }
+
+            .sales-summary h3 {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+
+    <script>
+        function showSales(period) {
+            window.location.href = "{% url 'sales_report' %}?period=" + period;
+        }
+    </script>
+{% endblock %}

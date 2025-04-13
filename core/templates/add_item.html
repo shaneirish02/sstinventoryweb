@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="form-section">
+    <h2 class="form-title">Add New Item</h2>
+    <form method="POST" class="main-form">
+        {% csrf_token %}
+
+        <!-- Row 1: Name + Category -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">Name</label>
+                {{ form.name }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.category.id_for_label }}">Category</label>
+                {{ form.category }}
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+            <label for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+        </div>
+
+        <!-- Row 2: Quantity + Price -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.quantity.id_for_label }}">Quantity</label>
+                {{ form.quantity }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.price.id_for_label }}">Price</label>
+                {{ form.price }}
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-submit">
+            <button type="submit" class="add-item-btn">Add Item</button>
+        </div>
+    </form>
+</section>
+
+<style>
+
+    .form-section {
+        padding: 40px 20px;
+    }
+
+    .form-title {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 30px;
+        color: #2c3e50;
+        text-align: center;
+    }
+
+    .main-form {
+        width: 100%;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .form-group {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 200px;
+    }
+
+    .form-group label {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 12px 15px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 1rem;
+        color: #333;
+        background-color: #fff;
+        transition: border-color 0.3s ease;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        border-color: #00a3a3;
+        outline: none;
+    }
+
+    .form-submit {
+        margin-top: 30px;
+        display: flex;
+        justify-content: right;
+    }
+
+    .add-item-btn {
+        background-color: #00a3a3;
+        color: white;
+        padding: 14px 32px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 8px;
+        cursor: pointer;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+    .add-item-btn:hover {
+        background-color: #007373;
+    }
+
+    @media (max-width: 768px) {
+        .form-row {
+            flex-direction: column;
+        }
+
+        .form-title {
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+        }
+
+        .main-form {
+            padding: 25px 20px;
+        }
+
+        .add-item-btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

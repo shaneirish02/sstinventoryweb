@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="content-wrapper">
+        <!-- Left: User Management Form -->
+        <div class="form-section">
+            <h2>User Management</h2>
+            <form method="POST" class="user-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                    {{ form.username }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.account_type.id_for_label }}">{{ form.account_type.label }}</label>
+                    {{ form.account_type }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
+                    {{ form.password1 }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+                    {{ form.password2 }}
+                </div>
+                <button type="submit" class="btn-create">Create User</button>
+            </form>
+        </div>
+
+        <!-- Right: User List -->
+        <div class="user-list-section">
+            <h3>User List</h3>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Account Type</th>
+                        <th>Date Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.userprofile.account_type }}</td>
+                            <td>{{ user.date_joined }}</td>
+                            <td>
+                                <a href="?delete_id={{ user.id }}" class="btn-delete">Delete</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="no-users">No users found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .container {
+        margin-left: 150px; 
+        margin-top: 30px;
+        margin-right: 30px;
+        padding: 10px;
+    }
+
+    .content-wrapper {
+        display: flex;
+        justify-content: column;
+        gap: 30px;
+    }
+
+    .form-section, .user-list-section {
+     
+        padding: 30px;
+        
+    }
+
+    .form-section {
+        flex: 2;
+    }
+
+    h2, h3 {
+        text-align: center;
+        color: #2d2d2d;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 1rem;
+    }
+
+    .form-group input:focus {
+        border-color: #008b8b;
+        outline: none;
+    }
+
+    .btn-create {
+        background-color: #008b8b;
+        color: white;
+        border: none;
+        width: 100%;
+        padding: 14px;
+        font-size: 1.1rem;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: 0.3s ease;
+    }
+
+    .btn-create:hover {
+        background-color: #006666;
+    }
+
+    .user-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .user-table th {
+        background-color: #008b8b;
+        color: white;
+        padding: 14px;
+        font-size: 1rem;
+        text-align: left;
+    }
+
+    .user-table td {
+        padding: 14px;
+        border-bottom: 1px solid #e2e2e2;
+        background-color: #fff8e1;
+    }
+
+    .user-table tr:nth-child(even) td {
+        background-color: #fff3c4;
+    }
+
+    .btn-delete {
+        background-color: #e53935;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+    }
+
+    .btn-delete:hover {
+        background-color: #c62828;
+    }
+
+    .no-users {
+        text-align: center;
+        color: #888;
+        font-style: italic;
+    }
+
+    /* Make the layout stack on small screens (mobile first) */
+    @media (max-width: 768px) {
+        .content-wrapper {
+            flex-direction: column;
+        }
+
+        .form-section, .user-list-section {
+            width: 100%;
+            margin-bottom: 20px; /* Space between the form and the table */
+        }
+    }
+</style>
+
+{% endblock %}
