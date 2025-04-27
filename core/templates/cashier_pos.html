@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,289 +8,280 @@
     {% load static %}
     <meta name="csrf-token" content="{{ csrf_token }}">
     <style>
-        /* Admin dashboard colors */
-        body {
+        * {
+            box-sizing: border-box;
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+            padding: 0;
+            font-family: Arial, sans-serif;
         }
 
-        header {
-            color: blue;
-            text-align: center;
-            font-size: 1.8rem;
+        body {
+            background: #2c2c2c;
+            margin: 0;
+            padding: 0;
+            font-size: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;  /* Prevent scrolling */
         }
 
         .container {
-            max-width: 1100px;
-            margin: 30px auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
-        }
-
-        .search-section {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .search-section input[type="text"],
-        .search-section input[type="number"] {
-            flex: 1 1 250px;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 1rem;
-        }
-
-        .search-section button {
-            padding: 12px 20px;
-            background-color: #2E8B57;
+            width: 100%;
+            height: 100%;
+            background: #0e2d55;
             color: white;
+            border: 2px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #f5c150;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
             font-weight: bold;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s;
+            font-size: 1.5rem;
         }
 
-        .search-section button:hover {
-            background-color: #276749;
+        .main {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-y: auto;
         }
 
-        .cart-section h2 {
-            margin-top: 0;
-            color: #2E8B57;
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
         }
 
         .cart-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            background-color: #f9f9f9;
-            border-radius: 10px;
-            overflow: hidden;
+            background: #eee;
+            padding: 15px;
+            border-radius: 8px;
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 60vh; 
+        }
+        
+
+        .cart-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
         }
 
-        .cart-table thead {
-            background-color: #2E8B57;
+        .header-row {
+            background: #0e2d55;
+            display: flex;
+            justify-content: space-between;
             color: white;
-        }
-
-        .cart-table th,
-        .cart-table td {
-            padding: 14px;
+            font-weight: bold;
             text-align: center;
-            border-bottom: 1px solid #ddd;
+            padding: 15px;
         }
 
-        .cart-table tbody tr:hover {
-            background-color: #f1f1f1;
+        .cart-row > div {
+            flex: 1;
+            padding: 10px;
+            color: black;
+            text-align: center;
         }
 
-        .total-section {
+        .bottom-section {
+            display: flex;
             margin-top: 20px;
-            font-size: 1.2rem;
-            text-align: right;
-            color: #333;
+            gap: 20px;
+            justify-content: space-between;
         }
 
-        .checkout-button {
-            margin-top: 20px;
-            padding: 14px 24px;
-            font-size: 1rem;
-            background-color: #1E90FF;
-            color: white;
-            border: none;
+        .left-form,
+        .right-status {
+            background: white;
+            color: black;
+            flex: 1;
+            padding: 20px;
             border-radius: 8px;
-            cursor: pointer;
-            float: right;
+            height: 30vh;
+            overflow-y: auto;
         }
 
-        .checkout-button:hover {
-            background-color: #1C86EE;
+        .left-form {
+            flex: 1.5;
+        }
+        .right-status {
+            flex: 1; 
         }
 
-        button.delete-btn {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 5px;
-            cursor: pointer;
+        .form-group {
+            margin-bottom: 20px;
         }
 
-        button.delete-btn:hover {
-            background-color: #c0392b;
-        }
-
-        .delete-all-btn {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 20px;
+        .form-group input {
             width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        .form-group-qty input {
+            width: 50%;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
         }
 
-        .delete-all-btn:hover {
-            background-color: #c0392b;
+        .buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: flex-end;
+            margin-top: -45px; 
         }
+
+        .add,
+        .checkout {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .add {
+            background: #0e2d55;
+            color: white;
+            border: none;
+        }
+
+        .checkout {
+            background: #00c853;
+            color: white;
+            border: none;
+        }
+
+        .payment-section {
+            display: none;
+            background: #fff;
+            padding: 30px;
+            border: 1px solid #333;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            border-radius: 10px;
+        }
+
+        .payment-section input {
+            padding: 10px;
+            margin-top: 20px;
+            width: 80%;
+            font-size: 18px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .payment-section button {
+            background: #00c853;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+            font-size: 18px;
+            border-radius: 8px;
+        }
+
     </style>
 </head>
 <body>
-
-<header>
-    <h2>Cashier POS System</h2>
-</header>
-
-<div class="container">
-    <div class="search-section">
-        <input type="text" id="item-name" placeholder="Search for item..." oninput="debouncedSearch()">
-        <input type="number" id="quantity" placeholder="Quantity" min="1">
-        <button onclick="addToCart()">Add to Cart</button>
-    </div>
-
-    <!-- Cart Table -->
-    <div class="cart-section">
-        <h2>Your Cart</h2>
-        <table class="cart-table" id="cart-table">
-            <thead>
-                <tr>
-                    <th>Item Name</th>
-                    <th>Quantity</th>
-                    <th>Price</th>
-                    <th>Subtotal</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Cart items will be dynamically added here -->
-            </tbody>
-        </table>
-
-        <div class="total-section">
-            <p>Total: $<span id="total-amount">0.00</span></p>
+    <div class="container">
+      <header class="header">
+        <span class="title-left">SST INVENTORY SYSTEM POS</span>
+        <span class="title-right">CASHIER DASHBOARD</span>
+      </header>
+  
+      <section class="main">
+        <div class="cart-header">
+          <h2>POS System - Cart View</h2>
+          <div class="total">Total Amount Due : ₱<span id="total-amount">0.00</span></div>
         </div>
-        <!-- Add this button to your cart display section -->
-        <button class="clear-cart-button" onclick="clearCart()">Clear Cart</button>
-
-        <button class="checkout-button" onclick="checkout()">Checkout</button>
-        <button class="delete-all-btn" onclick="removeAllItems()">Delete All Items</button>
+  
+        <div class="cart-table">
+          <div class="header-row">
+            <div>Item Name</div>
+            <div>Quantity</div>
+            <div>Price</div>
+            <div>Subtotal</div>
+            <div>Action</div>
+          </div>
+          <div class="cart-body" id="cart-table">
+            <!-- dynamic rows will go here -->
+          </div>
+        </div>
+  
+        <div class="bottom-section">
+          <div class="left-form">
+            <div class="form-group">
+              <input type="text" id="item-name" placeholder="Item Name">
+            </div>
+            <div class="form-group-qty">
+              <input type="number" id="quantity" min="1" placeholder="Quantity">
+            </div>
+            <div class="buttons">
+              <button class="add" onclick="addToCart()">Add to Cart</button>
+              <button class="checkout" onclick="showPaymentSection()">Checkout</button>
+            </div>
+          </div>
+          <div class="right-status">
+            No Item Found
+          </div>
+        </div>
+      </section>
     </div>
-</div>
+
+    <!-- Payment Section -->
+    <div class="payment-section" id="payment-section">
+        <h3>Payment</h3>
+        <p>Total: ₱<span id="payment-total">0.00</span></p>
+        <input type="number" id="payment-input" placeholder="Enter payment amount" min="0">
+        <div class="info">
+            <p>Amount Due: ₱<span id="payment-due">0.00</span></p>
+            <p class="change-info" id="change-info" style="display:none;">Change: ₱<span id="change-amount">0.00</span></p>
+        </div>
+        <button onclick="processPayment()">Confirm Payment</button>
+    </div>
 
 <script>
     let cart = [];
-    let debounceTimer;
 
     function getCSRFToken() {
         return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     }
 
-    // Add item to the cart
     function addToCart() {
         const itemName = document.getElementById('item-name').value.trim();
         const quantity = parseInt(document.getElementById('quantity').value, 10);
-
-        // Basic validation
+    
         if (!itemName || quantity <= 0) {
             alert("Please enter valid item name and quantity");
             return;
         }
-
-        // Check if the item already exists in the cart
-        const existingItem = cart.find(item => item.name === itemName);
-        if (existingItem) {
-            existingItem.quantity += quantity; // Update quantity if item already exists
-            updateCart(cart);
-        } else {
-            const data = { item_name: itemName, quantity: quantity };
-
-            fetch('/add_to_cart/', {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                }
-            })
-            .then(response => response.json())
-            .then(responseData => {
-                if (responseData.success) {
-                    updateCart(responseData.cart);
-                } else {
-                    alert(responseData.message || 'Error adding item to cart.');
-                }
-            })
-            .catch(error => alert('An error occurred while adding the item to the cart.'));
-        }
-    }
-
-    // Update cart items in the DOM and recalculate the total
-    function updateCart(cartItems) {
-        cart = cartItems;
-        const cartTableBody = document.getElementById('cart-table').querySelector('tbody');
-        cartTableBody.innerHTML = '';
-
-        let totalAmount = 0;
-        cartItems.forEach(item => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${item.name}</td>
-                <td><input type="number" value="${item.quantity}" min="1" onchange="updateQuantity(${item.id}, this.value)"></td>
-                <td>$${item.price}</td>
-                <td>$${(item.price * item.quantity).toFixed(2)}</td>
-                <td><button class="delete-btn" onclick="removeFromCart(${item.id})">Delete</button></td>
-            `;
-            cartTableBody.appendChild(row);
-            totalAmount += item.price * item.quantity;
-        });
-
-        document.getElementById('total-amount').textContent = totalAmount.toFixed(2);
-    }
-
-    // Permanently remove item from the cart
-    // Permanently remove item from the cart
-    function removeFromCart(itemId) {
-        fetch('/remove_from_cart/', {
+    
+        const data = { item_name: itemName, quantity: quantity };
+    
+        fetch('/add_to_cart/', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()  // Ensure CSRF token is sent
-            },
-            body: JSON.stringify({ 'item_id': itemId })
-        })
-        .then(response => response.json())
-        .then(responseData => {
-            if (responseData.success) {
-                alert('Item removed from cart');
-                // Update the cart display
-                updateCartDisplay(responseData.cart);
-            } else {
-                alert('Error removing item from cart');
-            }
-        })
-        .catch(error => {
-            alert('An error occurred while removing the item');
-            console.error(error);
-        });
-    }
-
-    // Permanently remove all items from the cart
-    function removeAllItems() {
-        cart = [];
-        updateCart(cart);
-
-        // Send request to the server to permanently clear the cart
-        fetch('/clear_cart/', {
-            method: 'POST',
-            body: JSON.stringify({}),
+            body: JSON.stringify(data),
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCSRFToken()
@@ -298,14 +289,111 @@
         })
         .then(response => response.json())
         .then(responseData => {
-            if (!responseData.success) {
-                alert('Error clearing the cart');
+            if (responseData.success) {
+                updateCart(responseData.cart);
+            } else {
+                alert(responseData.message || 'Error adding item to cart.');
             }
         })
-        .catch(error => alert('An error occurred while clearing the cart.'));
+        .catch(error => {
+            alert('An error occurred while adding the item to the cart.');
+            console.error(error);
+        });
     }
 
-    // Update the quantity of an item in the cart
+    function updateCart(cartItems) {
+        cart = cartItems;
+        const cartTableBody = document.getElementById('cart-table');
+        cartTableBody.innerHTML = '';
+
+        let totalAmount = 0;
+        cartItems.forEach(item => {
+            const row = document.createElement('div');
+            row.classList.add('cart-row');
+            row.innerHTML = `
+                <div>${item.name}</div>
+                <div><input type="number" value="${item.quantity}" min="1" onchange="updateQuantity(${item.id}, this.value)"></div>
+                <div>₱${item.price}</div>
+                <div>₱${(item.price * item.quantity).toFixed(2)}</div>
+                <div><button class="delete-btn" onclick="removeFromCart(${item.id})">Delete</button></div>
+            `;
+            cartTableBody.appendChild(row);
+            totalAmount += item.price * item.quantity;
+        });
+
+        document.getElementById('total-amount').textContent = `₱${totalAmount.toFixed(2)}`;
+    }
+
+    function showPaymentSection() {
+        const totalAmount = parseFloat(document.getElementById("total-amount").textContent.replace(/[₱,]/g, ''));
+        document.getElementById("payment-total").textContent = totalAmount.toFixed(2);
+        document.getElementById("payment-due").textContent = totalAmount.toFixed(2);
+        document.getElementById('payment-section').style.display = 'block';
+    }
+
+    function processPayment() {
+        const totalAmount = parseFloat(document.getElementById("payment-total").textContent);
+        const paymentReceived = parseFloat(document.getElementById("payment-input").value);
+
+        if (isNaN(paymentReceived) || paymentReceived < totalAmount) {
+            alert("Invalid or insufficient payment.");
+            return;
+        }
+
+        const changeAmount = paymentReceived - totalAmount;
+        document.getElementById('change-info').style.display = 'block';
+        document.getElementById('change-amount').textContent = changeAmount.toFixed(2);
+
+        fetch("/checkout/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken()
+            },
+            body: JSON.stringify({ 
+                payment_received: paymentReceived,
+                cart: cart
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`${data.message}\nChange: ₱${changeAmount.toFixed(2)}\n${data.order_summary}`);
+                updateCart([]); 
+                document.getElementById('payment-section').style.display = 'none';
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Checkout failed:", error);
+            alert("An error occurred during checkout.");
+        });
+    }
+
+    function removeFromCart(itemId) {
+        fetch('/remove_from_cart/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({ item_id: itemId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateCart(data.cart);
+            } else {
+                alert(data.message || 'Failed to remove item from cart.');
+            }
+        })
+        .catch(error => {
+            console.error("Error removing item:", error);
+            alert("An error occurred while removing the item.");
+        });
+    }
+
     function updateQuantity(itemId, newQuantity) {
         const item = cart.find(item => item.id === itemId);
         if (item) {
@@ -314,66 +402,42 @@
         }
     }
 
-    // Checkout action
-    function checkout() {
-        window.location.href = "/checkout/";
-    }
 
-    // Debounced search function to prevent excessive requests
-    function debouncedSearch() {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(searchItems, 300); // 300ms debounce time
-    }
-
-    // Search for items (simplified for now)
-    function searchItems() {
-        const itemName = document.getElementById('item-name').value.trim();
-        if (itemName.length < 3) return; // Start search only if more than 2 characters
-        console.log('Searching for:', itemName);
-        // Add actual search logic here
-    }
-    // JavaScript to clear the cart
-    function clearCart() {
-        fetch('/clear_cart/', {
-            method: 'POST',
+    document.getElementById('item-name').addEventListener('input', function () {
+        const query = this.value.trim();
+    
+        if (query.length === 0) {
+            document.querySelector('.right-status').innerHTML = 'No Item Found';
+            return;
+        }
+    
+        fetch(`/search_items/?q=${encodeURIComponent(query)}`, {
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()  // Make sure you send the CSRF token
-            },
+                'X-CSRFToken': getCSRFToken()
+            }
         })
         .then(response => response.json())
-        .then(responseData => {
-            if (responseData.success) {
-                alert('Cart cleared successfully');
-                // Reset the cart display on the page
-                updateCartDisplay([]);
+        .then(data => {
+            const rightStatus = document.querySelector('.right-status');
+    
+            if (data.length === 0) {
+                rightStatus.innerHTML = 'No matching items found.';
             } else {
-                alert('Error clearing the cart');
+                rightStatus.innerHTML = data.map(item => `
+                    <div style="margin-bottom: 10px;">
+                        <strong>${item.name}</strong><br>
+                        Price: ₱${item.price}<br>
+                        Description: ${item.description}
+                    </div>
+                `).join('');
             }
         })
         .catch(error => {
-            alert('An error occurred while clearing the cart');
-            console.error(error);
+            console.error('Search error:', error);
+            document.querySelector('.right-status').innerHTML = 'Error fetching results.';
         });
-    }
-
-// Function to update the cart display after clearing the cart
-    function updateCartDisplay(cartItems) {
-        const cartTableBody = document.getElementById('cart-table').querySelector('tbody');
-        cartTableBody.innerHTML = '';  // Clear the current cart items
-
-        cartItems.forEach(item => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${item.name}</td>
-                <td>${item.quantity}</td>
-                <td>$${item.price}</td>
-                <td>$${(item.price * item.quantity).toFixed(2)}</td>
-                <td><button class="delete-btn" onclick="removeFromCart(${item.id})">Delete</button></td>
-            `;
-            cartTableBody.appendChild(row);
-        });
-    }
+    });
+    
 
 </script>
 

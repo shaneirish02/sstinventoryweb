@@ -27,27 +27,58 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
-class Item(models.Model):
-    name = models.CharField(max_length=100)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    description = models.TextField(blank=True, null=True)  # ✅ Include this if needed
-    quantity = models.IntegerField(default=0)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+
+class Supplier(models.Model):
+    name = models.CharField(max_length=255)
+    contact_person = models.CharField(max_length=255, blank=True, null=True)
+    phone = models.CharField(max_length=20)
+    email = models.EmailField(blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    company = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
+from django.db import models
+
+class Item(models.Model):
+    # Define the choices for the 'unit' field
+    UNIT_CHOICES = [
+        ('each', 'Each'),
+        ('pack', 'Pack'),
+        ('case', 'Case'),
+        ('pieces', 'Pieces'),
+        ('meter', 'Meter'),
+        ('liter', 'Liter'),
+        ('kilograms', 'Kilograms'),
+        ('pound', 'Pound'),
+        ('gallons', 'Gallons'),
+    ]
+    
+    name = models.CharField(max_length=255)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    description = models.TextField()
+    quantity = models.PositiveIntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    supplier = models.ForeignKey(Supplier, on_delete=models.SET_DEFAULT, default=1)
+    unit = models.CharField(max_length=100, choices=UNIT_CHOICES)  # Unit field with choices
+    image = models.ImageField(upload_to='items_images/', blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
 
     
     
 # Model for Sale
 class Sale(models.Model):
     date = models.DateField()
-    item = models.ForeignKey(Item, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
-        return f"Sale of {self.item.name} on {self.date}"
+        return f"Sale on {self.date} for ₱{self.total_price}"
+
 # Model for SaleItem
 class SaleItem(models.Model):
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='items')
@@ -180,3 +211,14 @@ def remove_from_cart(request):
         except Exception as e:
             print("Error while removing item:", e)
             return JsonResponse({'success': False, 'message': 'Error removing item from cart'})
+
+
+    
+
+class StockTransaction(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='stock_transactions')
+    transaction_type = models.CharField(max_length=10, choices=[('IN', 'In'), ('OUT', 'Out')])
+    quantity = models.IntegerField()
+    unit = models.CharField(max_length=20, default="pcs")
+    date = models.DateTimeField(auto_now_add=True)
+    remarks = models.TextField(blank=True, null=True)

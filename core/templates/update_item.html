@@ -7,33 +7,41 @@
             <form method="POST" class="update-form">
                 {% csrf_token %}
                 
-                <!-- Form fields rendered dynamically with proper styling -->
                 <div class="form-group">
                     <label for="{{ form.name.id_for_label }}">Name</label>
-                    {{ form.name }}  <!-- Renders the 'name' field -->
+                    {{ form.name }}
                 </div>
 
                 <div class="form-group">
                     <label for="{{ form.category.id_for_label }}">Category</label>
-                    {{ form.category }}  <!-- Renders the 'category' field -->
+                    {{ form.category }}
                 </div>
 
                 <div class="form-group">
                     <label for="{{ form.description.id_for_label }}">Description</label>
-                    {{ form.description }}  <!-- Renders the 'description' field -->
+                    {{ form.description }}
                 </div>
 
                 <div class="form-group">
                     <label for="{{ form.quantity.id_for_label }}">Quantity</label>
-                    {{ form.quantity }}  <!-- Renders the 'quantity' field -->
+                    {{ form.quantity }}
                 </div>
 
                 <div class="form-group">
                     <label for="{{ form.price.id_for_label }}">Price</label>
-                    {{ form.price }}  <!-- Renders the 'price' field -->
+                    {{ form.price }}
                 </div>
 
-                <!-- Submit Button -->
+                <div class="form-group">
+                    <label for="{{ form.unit.id_for_label }}">Unit</label>
+                    {{ form.unit }}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.supplier.id_for_label }}">Supplier</label>
+                    {{ form.supplier }}
+                </div>
+
                 <div class="form-submit">
                     <button type="submit" class="btn update-btn">Save Changes</button>
                 </div>
@@ -42,7 +50,6 @@
     </div>
 
     <style>
-        /* General container style */
         .container {
             margin-top: 40px;
             display: flex;
@@ -68,7 +75,6 @@
             font-weight: 500;
         }
 
-        /* Form Group Styles */
         .form-group {
             margin-bottom: 20px;
         }
@@ -120,7 +126,6 @@
             background-color: #004343;
         }
 
-        /* Responsive Styles */
         @media (max-width: 768px) {
             .form-container {
                 padding: 25px;

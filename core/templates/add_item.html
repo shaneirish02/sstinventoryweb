@@ -1,20 +1,24 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 <section class="form-section">
     <h2 class="form-title">Add New Item</h2>
-    <form method="POST" class="main-form">
+    <form method="POST" enctype="multipart/form-data" class="main-form" oninput="updatePreview()">
         {% csrf_token %}
+        {{ form.non_field_errors }}
 
         <!-- Row 1: Name + Category -->
         <div class="form-row">
             <div class="form-group">
                 <label for="{{ form.name.id_for_label }}">Name</label>
                 {{ form.name }}
+                {{ form.name.errors }}
             </div>
             <div class="form-group">
                 <label for="{{ form.category.id_for_label }}">Category</label>
                 {{ form.category }}
+                {{ form.category.errors }}
             </div>
         </div>
 
@@ -22,6 +26,7 @@
         <div class="form-group">
             <label for="{{ form.description.id_for_label }}">Description</label>
             {{ form.description }}
+            {{ form.description.errors }}
         </div>
 
         <!-- Row 2: Quantity + Price -->
@@ -29,11 +34,35 @@
             <div class="form-group">
                 <label for="{{ form.quantity.id_for_label }}">Quantity</label>
                 {{ form.quantity }}
+                {{ form.quantity.errors }}
             </div>
             <div class="form-group">
                 <label for="{{ form.price.id_for_label }}">Price</label>
                 {{ form.price }}
+                {{ form.price.errors }}
             </div>
+        </div>
+
+        <!-- Supplier -->
+        <div class="form-group">
+            <label for="{{ form.supplier.id_for_label }}">Supplier</label>
+            {{ form.supplier }}
+            {{ form.supplier.errors }}
+        </div>
+
+        <!-- Unit -->
+        <div class="form-group">
+            <label for="{{ form.unit.id_for_label }}">Unit</label>
+            {{ form.unit }}
+            {{ form.unit.errors }}
+        </div>
+
+        <!-- Image Upload -->
+        <div class="form-group">
+            <label for="{{ form.image.id_for_label }}">Upload Image (Optional)</label>
+            {{ form.image }}
+            <div id="image-preview"></div>
+            {{ form.image.errors }}
         </div>
 
         <!-- Submit Button -->
@@ -41,107 +70,152 @@
             <button type="submit" class="add-item-btn">Add Item</button>
         </div>
     </form>
+
+    <!-- Live Preview Panel -->
+    <div class="preview-card">
+        <h4>Live Preview</h4>
+        <p><strong>Name:</strong> <span id="prev-name">-</span></p>
+        <p><strong>Category:</strong> <span id="prev-cat">-</span></p>
+        <p><strong>Quantity:</strong> <span id="prev-qty">-</span></p>
+        <p><strong>Price:</strong> $<span id="prev-price">-</span></p>
+        <p><strong>Unit:</strong> <span id="prev-unit">-</span></p>
+        <p><strong>Supplier:</strong> <span id="prev-supplier">-</span></p>
+        <div id="prev-image"></div> <!-- Image preview in live preview -->
+    </div>
 </section>
 
 <style>
-
     .form-section {
         padding: 40px 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 40px;
+    }
+
+    .main-form {
+        flex: 2;
+        min-width: 300px;
+    }
+
+    .preview-card {
+        flex: 1;
+        background-color: #f4f4f4;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #ccc;
+        max-width: 350px;
     }
 
     .form-title {
         font-size: 2rem;
-        font-weight: 600;
         margin-bottom: 30px;
-        color: #2c3e50;
         text-align: center;
-    }
-
-    .main-form {
         width: 100%;
     }
 
     .form-row {
         display: flex;
         gap: 20px;
-        margin-bottom: 20px;
         flex-wrap: wrap;
+        margin-bottom: 20px;
     }
 
     .form-group {
         flex: 1;
         display: flex;
         flex-direction: column;
-        min-width: 200px;
-    }
-
-    .form-group label {
-        font-size: 1rem;
-        font-weight: 500;
-        color: #333;
-        margin-bottom: 8px;
     }
 
     .form-group input,
     .form-group select,
     .form-group textarea {
-        padding: 12px 15px;
-        border-radius: 8px;
-        border: 1px solid #ccc;
+        padding: 12px;
         font-size: 1rem;
-        color: #333;
-        background-color: #fff;
-        transition: border-color 0.3s ease;
-        width: 100%;
-        box-sizing: border-box;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        margin-bottom: 5px;
     }
 
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus {
-        border-color: #00a3a3;
-        outline: none;
+        border-color: #00796b;
     }
 
     .form-submit {
-        margin-top: 30px;
-        display: flex;
-        justify-content: right;
+        margin-top: 20px;
+        text-align: right;
     }
 
     .add-item-btn {
-        background-color: #00a3a3;
+        background-color: #00796b;
         color: white;
-        padding: 14px 32px;
+        padding: 14px 28px;
         font-size: 1.1rem;
-        font-weight: 600;
+        border: none;
         border-radius: 8px;
         cursor: pointer;
-        border: none;
-        transition: background-color 0.3s ease;
+        transition: 0.3s;
     }
 
     .add-item-btn:hover {
-        background-color: #007373;
+        background-color: #004d40;
+    }
+
+    #image-preview {
+        margin-top: 10px;
+    }
+
+    #image-preview img {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+    }
+
+    #prev-image img {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
     }
 
     @media (max-width: 768px) {
-        .form-row {
+        .form-section {
             flex-direction: column;
-        }
-
-        .form-title {
-            font-size: 1.6rem;
-            margin-bottom: 20px;
-        }
-
-        .main-form {
-            padding: 25px 20px;
-        }
-
-        .add-item-btn {
-            width: 100%;
         }
     }
 </style>
+
+<script>
+    const imgInput = document.getElementById("id_image");
+    const imgPreview = document.getElementById("image-preview");
+    const livePreviewImage = document.getElementById("prev-image");
+
+    if (imgInput) {
+        imgInput.addEventListener("change", () => {
+            const file = imgInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    imgPreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    livePreviewImage.innerHTML = `<img src="${e.target.result}" alt="Live Preview">`;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imgPreview.innerHTML = "";
+                livePreviewImage.innerHTML = "";
+            }
+        });
+    }
+
+    function updatePreview() {
+        document.getElementById("prev-name").innerText = document.getElementById("id_name")?.value || "-";
+        document.getElementById("prev-cat").innerText = document.getElementById("id_category")?.selectedOptions[0]?.text || "-";
+        document.getElementById("prev-qty").innerText = document.getElementById("id_quantity")?.value || "-";
+        document.getElementById("prev-price").innerText = document.getElementById("id_price")?.value || "-";
+        document.getElementById("prev-unit").innerText = document.getElementById("id_unit")?.value || "-";
+        document.getElementById("prev-supplier").innerText = document.getElementById("id_supplier")?.value || "-";
+    }
+</script>
 {% endblock %}

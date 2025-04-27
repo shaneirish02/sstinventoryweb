@@ -2,6 +2,8 @@ from django import forms
 from .models import Item
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django import forms
+from .models import Supplier
 
 ACCOUNT_TYPES = (
     ('Admin', 'Admin'),
@@ -18,4 +20,11 @@ class UserForm(UserCreationForm):
 class ItemForm(forms.ModelForm):
     class Meta:
         model = Item
-        fields = ['name', 'category', 'description', 'quantity', 'price']
+        fields = ['name', 'category', 'description', 'quantity', 'price', 'supplier', 'unit', 'image']
+
+
+
+class SupplierForm(forms.ModelForm):
+    class Meta:
+        model = Supplier
+        fields = ['name', 'contact_person', 'phone', 'email', 'address', 'company']

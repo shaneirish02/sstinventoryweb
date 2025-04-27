@@ -1,188 +1,261 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <form method="GET" action="{% url 'inventory_management' %}" class="search-form">
-        <input type="text" name="search" placeholder="Search inventory..." value="{{ request.GET.search }}" class="search-input">
-        <button type="submit" class="btn search-btn">Search</button>
-    </form>
 
-    <div class="form-container">
-        <h3>Inventory Item List</h3>
-        <div class="table-responsive">
-            <table class="inventory-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>Description</th>
-                        <th>Quantity</th>
-                        <th>Price</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
+<!-- Controls: Entries per page & Search -->
+<div class="controls-container">
+    <div class="entries-control">
+        <label for="entriesSelect">Show 
+            <select id="entriesSelect" class="entries-select">
+                <option value="10" selected>10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select> entries
+        </label>
+    </div>
+
+    <form method="get" action="." class="search-form">
+        <label for="searchInput">Search:</label>
+        <input
+            type="text"
+            id="searchInput"
+            name="q"
+            class="search-input"
+            placeholder="Search item..."
+            value="{{ request.GET.q|default:'' }}"
+        />
+    </form>
+</div>
+
+<!-- Inventory Table -->
+<div class="form-container">
+    <h3>Inventory Item List</h3>
+    <div class="table-responsive">
+        <table class="inventory-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Quantity</th>
+                    <th>Unit</th>
+                    <th>Price</th>
+                    <th>Supplier</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if items %}
                     {% for item in items %}
                         <tr>
                             <td>{{ forloop.counter }}</td>
+                            <td>
+                                {% if item.image %}
+                                    <img src="{{ item.image.url }}" alt="{{ item.name }}" class="item-img">
+                                {% else %}
+                                    <span class="no-image">No image</span>
+                                {% endif %}
+                            </td>
                             <td>{{ item.name }}</td>
                             <td>{{ item.category.name }}</td>
                             <td>{{ item.description }}</td>
                             <td>{{ item.quantity }}</td>
+                            <td>{{ item.unit }}</td>
                             <td>{{ item.price }}</td>
+                            <td>{{ item.supplier.name }}</td>
                             <td>
                                 <a href="{% url 'update_item' item.id %}" class="btn update-btn">Update</a>
                                 <a href="{% url 'delete_item' item.id %}" class="btn delete-btn">Delete</a>
+                                <a href="{% url 'stock_card' item.id %}" class="btn stock-btn">Stock Card</a>
                             </td>
                         </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="7">No items found.</td>
-                        </tr>
                     {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                {% else %}
+                    <tr>
+                        <td colspan="9">No items found.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
     </div>
+</div>
 
-    <style>
-        /* Search Form Positioned Right */
-        .search-form {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            margin-top: 60px;
-            margin-bottom: 20px;
-            gap: 10px;
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchInput');
+    const tableBody = document.querySelector('.inventory-table tbody');
+
+    searchInput.addEventListener('input', function () {
+        const query = this.value;
+
+        fetch(`{% url 'live_search_items' %}?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                tableBody.innerHTML = data.html;
+            })
+            .catch(error => {
+                console.error('Error during live search:', error);
+            });
+    });
+});
+</script>
+
+<!-- Clean & Professional CSS -->
+<style>
+    :root {
+        --primary-color: #00796b;
+        --accent-color: #64b5f6;
+        --success-color: #81c784;
+        --danger-color: #e57373;
+        --text-dark: #333;
+        --text-light: #fff;
+        --border-radius: 6px;
+        --transition: 0.3s ease;
+    }
+
+    .controls-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 40px;
+        margin-bottom: 20px;
+    }
+
+    .entries-select {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        margin-left: 8px;
+    }
+
+    .search-form {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .search-input {
+        width: 240px;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+    }
+
+    .form-container h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 20px;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .inventory-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #ddd;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        margin-top: 10px;
+    }
+
+    .inventory-table thead {
+        background-color: var(--primary-color);
+        color: var(--text-light);
+    }
+
+    .inventory-table th,
+    .inventory-table td {
+        padding: 14px;
+        text-align: center;
+        font-size: 0.95rem;
+        border: 1px solid #eee;
+    }
+
+    .inventory-table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .inventory-table tbody tr:nth-child(even) {
+        background-color: #fafafa;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text-light);
+        text-decoration: none;
+        border-radius: var(--border-radius);
+        transition: var(--transition);
+        display: inline-block;
+        margin: 2px;
+    }
+
+    .update-btn {
+        background-color: var(--success-color);
+    }
+
+    .update-btn:hover {
+        background-color: #66bb6a;
+        transform: scale(1.05);
+    }
+
+    .delete-btn {
+        background-color: var(--danger-color);
+    }
+
+    .delete-btn:hover {
+        background-color: #f44336;
+        transform: scale(1.05);
+    }
+
+    .stock-btn {
+        background-color: var(--accent-color);
+    }
+
+    .stock-btn:hover {
+        background-color: #42a5f5;
+        transform: scale(1.05);
+    }
+
+    .item-img {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+
+    .no-image {
+        color: #aaa;
+        font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+        .controls-container {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .search-form,
+        .entries-control {
+            width: 100%;
+            justify-content: space-between;
         }
 
         .search-input {
-            width: 220px;
-            padding: 8px 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 0.95rem;
-        }
-
-        .search-btn {
-            padding: 8px 16px;
-            background-color: #00796b;
-            color: #fff;
-            font-weight: 600;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .search-btn:hover {
-            background-color: #004d40;
-        }
-
-
-        .form-container h3 {
-            font-size: 1.5rem;
-            color: #333;
-            margin-bottom: 20px;
-            font-weight: 500;
-        }
-
-        /* Table Styling */
-        .table-responsive {
-            max-width: 100%;
-            overflow-x: auto;
-        }
-
-        .inventory-table {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            border: 2px solid #00796b; 
-            border-radius: 8px;
-            overflow: hidden;
         }
+    }
+</style>
 
-        .inventory-table thead {
-            background-color: #00796b;
-            color: #fff;
-        }
-
-        .inventory-table th, .inventory-table td {
-            padding: 14px;
-            text-align: center;
-            border: 1px solid #ccc; 
-            font-size: 1rem;
-        }
-
-        .inventory-table th {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .inventory-table tbody tr:hover {
-            background-color: #f1f1f1;
-        }
-
-        .inventory-table tbody tr:nth-child(even) {
-            background-color: #f7f7f7;
-        }
-
-        .inventory-table tbody tr:nth-child(odd) {
-            background-color: #fafafa;
-        }
-
-        /* Action Buttons */
-        .btn {
-            padding: 10px 18px;
-            font-size: 0.95rem;
-            text-decoration: none;
-            border-radius: 5px;
-            cursor: pointer;
-            display: inline-block;
-            margin: 6px;
-            transition: background-color 0.3s, transform 0.2s;
-        }
-
-        .update-btn {
-            background-color: #81c784;
-            color: white;
-        }
-
-        .update-btn:hover {
-            background-color: #66bb6a;
-            transform: scale(1.05);
-        }
-
-        .delete-btn {
-            background-color: #e57373;
-            color: white;
-        }
-
-        .delete-btn:hover {
-            background-color: #f44336;
-            transform: scale(1.05);
-        }
-
-        /* Mobile Responsiveness */
-        @media (max-width: 768px) {
-            .search-form {
-                flex-direction: column;
-                align-items: flex-end;
-            }
-
-            .search-input {
-                width: 100%;
-            }
-
-            .search-btn {
-                width: 100%;
-                padding: 10px;
-            }
-
-            .inventory-table th, .inventory-table td {
-                font-size: 0.9rem;
-                padding: 12px;
-            }
-        }
-    </style>
 {% endblock %}

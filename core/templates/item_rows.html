@@ -1,0 +1,25 @@
+{% for item in items %}
+<tr>
+    <td>{{ forloop.counter }}</td>
+    <td>
+        {% if item.image %}
+            <img src="{{ item.image.url }}" alt="{{ item.name }}" width="50" height="50">
+        {% else %}
+            <span>No image</span>
+        {% endif %}
+    </td>
+    <td>{{ item.name }}</td>
+    <td>{{ item.category.name }}</td>
+    <td>{{ item.description }}</td>
+    <td>{{ item.quantity }}</td>
+    <td>{{ item.unit }}</td>
+    <td>{{ item.price }}</td>
+    <td>
+        <a href="{% url 'update_item' item.id %}" class="btn update-btn">Update</a>
+        <a href="{% url 'delete_item' item.id %}" class="btn delete-btn">Delete</a>
+        <a href="{% url 'stock_card' item.id %}" class="btn stock-btn">Stock Card</a>
+    </td>
+</tr>
+{% empty %}
+<tr><td colspan="9">No matching items found.</td></tr>
+{% endfor %}

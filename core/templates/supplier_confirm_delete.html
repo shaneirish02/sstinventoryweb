@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 50px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+    <h2 style="text-align: center; color: #dc3545;">Confirm Delete</h2>
+    <p style="font-size: 16px; text-align: center;">Are you sure you want to delete the supplier <strong>{{ supplier.name }}</strong>?</p>
+    
+    <form method="post" style="display: flex; justify-content: center; gap: 10px;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger" style="padding: 10px 20px;">Yes, Delete</button>
+        <a href="{% url 'supplier_detail' supplier.id %}" class="btn btn-secondary" style="padding: 10px 20px; background-color: #6c757d; color: white; text-decoration: none;">Cancel</a>
+    </form>
+</div>
+{% endblock %}

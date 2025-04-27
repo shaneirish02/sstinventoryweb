@@ -1,56 +1,101 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from .models import Item, Category, Sale, UserProfile, Supplier, CartItem, StockTransaction
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login
-from .models import Item, Category, Sale, UserProfile
 from django.db.models import Sum
 from django.contrib.auth.models import User
 from .forms import UserForm, ItemForm
 from django.http import JsonResponse
 import datetime
 import json
-from .models import Item, CartItem
 from django.core.exceptions import ValidationError
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import logout
 from django.views.decorators.csrf import csrf_exempt
-
+from .forms import SupplierForm
+from django.template.loader import render_to_string
+from django.db.models import Q
+from django.utils import timezone
 
 def logout_view(request):
     logout(request)
     return redirect('user_login')
 
+@csrf_exempt
 def checkout(request):
     if request.method == "POST":
-        # Get payment data and cart from the request
-        data = json.loads(request.body)
-        payment_received = float(data['payment_received'])
-        cart = data['cart']
-        total_amount = sum(item['price'] * item['quantity'] for item in cart)
+        try:
+            data = json.loads(request.body)
 
-        if payment_received < total_amount:
-            return JsonResponse({'error': 'Insufficient funds'})
+            payment_received = float(data.get('payment_received', 0))
+            cart = request.session.get('cart', [])
 
-        # Record sale in the database
-        sale = Sale.objects.create(
-            total_price=total_amount,
-            date=datetime.today().date()
-        )
+            if not cart:
+                return JsonResponse({'success': False, 'message': 'Cart is empty.'})
 
-        for cart_item in cart:
-            item = Item.objects.get(name=cart_item['item'])
-            sale.items.create(item=item, quantity=cart_item['quantity'], price=item.price, subtotal=cart_item['price'] * cart_item['quantity'])
+            total_amount = sum(item['price'] * item['quantity'] for item in cart)
 
-            # Update item quantity in the inventory
+            if payment_received < total_amount:
+                return JsonResponse({'success': False, 'message': 'Insufficient funds.'})
+
+            # Create Sale record
+            sale = Sale.objects.create(
+                total_price=total_amount,
+                date=timezone.now().date()
+            )
+
+            print("Cart in session:", cart)
+
+            for cart_item in cart:
+                print("Cart item:", cart_item)
+                item_id = cart_item.get('id')
+                if not item_id:
+                    return JsonResponse({'success': False, 'message': 'Missing item ID in cart.', 'cart_item': cart_item})
+
+            try:
+                item = Item.objects.get(id=item_id)
+            except Item.DoesNotExist:
+                return JsonResponse({'success': False, 'message': f'Item with ID {item_id} not found.'})
+
+            sale.items.create(
+                item=item,
+                quantity=cart_item['quantity'],
+                price=item.price,
+                subtotal=item.price * cart_item['quantity']
+            )
+
+            StockTransaction.objects.create(
+                item=item,
+                transaction_type='OUT',
+                quantity=cart_item['quantity'],
+                unit=item.unit,
+                date=timezone.now(),
+                remarks='Checked out via POS'
+            )
+
+            # Deduct stock
             item.quantity -= cart_item['quantity']
             item.save()
 
-        # Clear the cart
-        request.session['cart'] = []
-        request.session.modified = True
 
-        change = payment_received - total_amount
-        return JsonResponse({'message': 'Transaction successful', 'change': change, 'total_amount': total_amount, 'orderSummary': f"Sale of {len(cart)} items for ${total_amount}"})
-    return redirect('cashier_pos')
+            # Clear cart after successful checkout
+            request.session['cart'] = []
+            request.session.modified = True
+
+            change = payment_received - total_amount
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Transaction successful',
+                'change': change,
+                'total_amount': total_amount,
+                'order_summary': f"Sale of {len(cart)} items for ${total_amount:.2f}"
+            })
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'})
 
 def user_login(request):
     if request.method == 'POST':
@@ -120,7 +165,8 @@ def sales_report(request):
     elif period == 'year':
         sales_data = Sale.objects.filter(date__year=today.year)
 
-    total_sales = sum(sale.total for sale in sales_data)
+    total_sales = sum(sale.total_price for sale in sales_data)
+
 
     return render(request, 'sales_report.html', {
         'selected_period': period.capitalize(),
@@ -132,10 +178,10 @@ def sales_report(request):
 @login_required
 def add_item(request):
     if request.method == 'POST':
-        form = ItemForm(request.POST)
+        form = ItemForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()  # Save the item to the database
-            return redirect('inventory_management')  # Redirect after successful form submission
+            form.save()  
+            return redirect('inventory_management')  
     else:
         form = ItemForm()
 
@@ -201,6 +247,25 @@ def delete_item(request, id):
     item.delete()
     return redirect('inventory_management')
 
+
+def item_list(request):
+    query = request.GET.get('q', '')
+    items = Item.objects.all()
+
+    if query:
+        items = items.filter(
+            Q(name__icontains=query) |
+            Q(description__icontains=query) |
+            Q(category__name__icontains=query)
+        )
+
+    context = {
+        'items': items,
+    }
+    return render(request, 'inventory_management.html', context)
+
+
+
 def item_autocomplete(request):
     query = request.GET.get('term', '')
     items = Item.objects.filter(name__icontains=query).values('name', 'id')
@@ -209,83 +274,71 @@ def item_autocomplete(request):
 @csrf_exempt
 def add_to_cart(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        item_name = data.get('item_name')
-        quantity = int(data.get('quantity', 1))
-
         try:
-            # Get the item from the database
-            item = Item.objects.get(name=item_name)
-        except Item.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Item not found'})
+            data = json.loads(request.body)
+            item_name = data.get('item_name')
+            quantity = int(data.get('quantity', 1))
 
-        # Ensure the quantity does not exceed stock
-        if quantity > item.quantity:
-            return JsonResponse({'success': False, 'message': f'Not enough stock for {item_name}. Available quantity: {item.quantity}'})
+            # Get item from database
+            try:
+                item = Item.objects.get(name__iexact=item_name)
+            except Item.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Item not found.'})
 
-        subtotal = float(item.price) * quantity
-        cart_item = {
-            'id': item.id,
-            'name': item.name,
-            'quantity': quantity,
-            'price': float(item.price),
-            'subtotal': subtotal
-        }
+            # Initialize cart in session if not already
+            cart = request.session.get('cart', [])
 
-        # Get the current cart from the session
-        cart = request.session.get('cart', [])
+            # Check if item already exists in the session cart
+            for cart_item in cart:
+                if cart_item['id'] == item.id:
+                    cart_item['quantity'] += quantity
+                    break
+            else:
+                # Add new item
+                cart.append({
+                    'id': item.id,
+                    'name': item.name,
+                    'price': float(item.price),  # Make sure it's JSON serializable
+                    'quantity': quantity
+                })
 
-        # Check if the item is already in the cart
-        item_in_cart = False
-        for cart_entry in cart:
-            if cart_entry['id'] == cart_item['id']:
-                cart_entry['quantity'] += quantity  # Increase the quantity
-                cart_entry['subtotal'] = cart_entry['quantity'] * cart_entry['price']  # Recalculate the subtotal
-                item_in_cart = True
-                break
+            # Save updated cart in session
+            request.session['cart'] = cart
+            request.session.modified = True
 
-        # If the item isn't already in the cart, add it
-        if not item_in_cart:
-            cart.append(cart_item)
+            return JsonResponse({'success': True, 'cart': cart})
 
-        # Save the updated cart to session
-        request.session['cart'] = cart
-        request.session.modified = True
-
-        return JsonResponse({'success': True, 'cart': cart})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
+@csrf_exempt
+def remove_from_cart(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            item_id = data.get('item_id')
 
-def checkout(request):
-    if request.method == "POST":
-        payment_received = float(request.POST.get('payment_received'))
-        cart = request.session.get('cart', [])
-        total_amount = sum(item['subtotal'] for item in cart)
+            cart = request.session.get('cart', [])
+            cart = [item for item in cart if item['id'] != item_id]
 
-        if payment_received < total_amount:
-            return JsonResponse({'error': 'Insufficient funds'})
+            request.session['cart'] = cart
+            request.session.modified = True
 
-        for cart_item in cart:
-            item = Item.objects.get(name=cart_item['item'])
-            Sale.objects.create(
-                item=item,
-                quantity=cart_item['quantity'],
-                total_price=cart_item['subtotal']
-            )
+            return JsonResponse({'success': True, 'cart': cart})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
-        request.session['cart'] = []
-        request.session.modified = True
 
-        change = payment_received - total_amount
-        return JsonResponse({'message': 'Transaction successful', 'change': change, 'total_amount': total_amount})
 
-    return redirect('cashier_pos')
+def live_search_items(request):
+    query = request.GET.get('q', '')
+    items = Item.objects.filter(name__icontains=query)
+    html = render_to_string('item_rows.html', {'items': items})
+    return JsonResponse({'html': html})
 
-def admin_dashboard(request):
-    sales = Sale.objects.all().order_by('-date')  # Fetch all sales
-    total_sales = sum(sale.total_price for sale in sales)
-    return render(request, 'admin_dashboard.html', {'sales': sales, 'total_sales': total_sales})
 
 def search_item(request, item_name):
     if request.method == 'GET':
@@ -299,7 +352,10 @@ def search_item(request, item_name):
                 'quantity': item.quantity
             })
         return JsonResponse({'items': data})
-    
+
+
+
+
 @csrf_exempt  # Exempting CSRF for testing (ensure to use CSRF properly in production)
 def update_inventory(request, item_id):
     if request.method == 'POST':
@@ -357,28 +413,7 @@ def checkout_view(request):
 
     return render(request, 'checkout.html', {'cart': cart, 'total_amount': total_amount})
 
-@csrf_exempt
-def remove_from_cart(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            item_id = data.get('item_id')
 
-            # Get the cart from session
-            cart = request.session.get('cart', [])
-            
-            # Remove the item completely from the cart
-            updated_cart = [item for item in cart if item['id'] != item_id]
-
-            # Save the updated cart in session
-            request.session['cart'] = updated_cart
-            request.session.modified = True
-
-            return JsonResponse({'success': True, 'cart': updated_cart})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
-
-    return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
 @csrf_exempt  # Disable CSRF for testing (use CSRF protection in production)
 def clear_cart(request):
@@ -394,16 +429,49 @@ def clear_cart(request):
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
-@csrf_exempt  # Disable CSRF for testing (use CSRF protection in production)
-def clear_cart(request):
+
+def supplier_list(request):
+    suppliers = Supplier.objects.all()
+    return render(request, 'supplier_list.html', {'suppliers': suppliers})
+
+def supplier_create(request):
     if request.method == 'POST':
-        try:
-            # Clear the cart by resetting the session cart to an empty list
-            request.session['cart'] = []  
-            request.session.modified = True  # Mark the session as modified
+        form = SupplierForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('supplier_list')  # Redirect to the supplier list after saving
+    else:
+        form = SupplierForm()  # Create a blank form for GET requests
 
-            return JsonResponse({'success': True, 'message': 'Cart has been cleared successfully.'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
+    return render(request, 'supplier_form.html', {'form': form, 'form_title': 'Add Supplier'})
 
-    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+def supplier_update(request, pk):
+    supplier = get_object_or_404(Supplier, pk=pk)
+    form = SupplierForm(request.POST or None, instance=supplier)
+    if form.is_valid():
+        form.save()
+        return redirect('supplier_list')
+    return render(request, 'supplier_form.html', {'form': form, 'form_title': 'Edit Supplier'})
+
+def supplier_detail(request, pk):
+    supplier = get_object_or_404(Supplier, pk=pk)
+    return render(request, 'supplier_detail.html', {'supplier': supplier})
+
+def supplier_confirm_delete(request, pk):
+    supplier = get_object_or_404(Supplier, pk=pk)
+    if request.method == 'POST':
+        supplier.delete()
+        return redirect('supplier_list')
+    return render(request, 'supplier_confirm_delete.html', {'supplier': supplier})
+
+def stock_card(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    transactions = item.stock_transactions.all().order_by('-date')  # using the correct related_name
+    return render(request, 'stock_card.html', {'item': item, 'transactions': transactions})
+
+
+def search_items(request):
+    query = request.GET.get('q', '')
+    items = Item.objects.filter(name__icontains=query)[:10]
+    results = [{'name': item.name, 'price': float(item.price), 'description': item.description} for item in items]
+    return JsonResponse(results, safe=False)
