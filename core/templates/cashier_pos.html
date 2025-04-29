@@ -269,37 +269,38 @@
     }
 
     function addToCart() {
-        const itemName = document.getElementById('item-name').value.trim();
-        const quantity = parseInt(document.getElementById('quantity').value, 10);
-    
-        if (!itemName || quantity <= 0) {
-            alert("Please enter valid item name and quantity");
-            return;
-        }
-    
-        const data = { item_name: itemName, quantity: quantity };
-    
-        fetch('/add_to_cart/', {
-            method: 'POST',
-            body: JSON.stringify(data),
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
-            }
-        })
-        .then(response => response.json())
-        .then(responseData => {
-            if (responseData.success) {
-                updateCart(responseData.cart);
-            } else {
-                alert(responseData.message || 'Error adding item to cart.');
-            }
-        })
-        .catch(error => {
-            alert('An error occurred while adding the item to the cart.');
-            console.error(error);
-        });
+    const itemName = document.getElementById('item-name').value.trim();
+    const quantity = parseInt(document.getElementById('quantity').value, 10);
+
+    if (!itemName || quantity <= 0) {
+        alert("Please enter valid item name and quantity");
+        return;
     }
+
+    const data = { item_name: itemName, quantity: quantity };
+
+    fetch('/add_to_cart/', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(responseData => {
+        if (responseData.success) {
+            updateCart(responseData.cart);
+        } else {
+            alert(responseData.message || 'Error adding item to cart.');
+        }
+    })
+    .catch(error => {
+        alert('An error occurred while adding the item to the cart.');
+        console.error(error);
+    });
+}
+
 
     function updateCart(cartItems) {
         cart = cartItems;
@@ -325,11 +326,24 @@
     }
 
     function showPaymentSection() {
+        // Ensure the cart is not empty before proceeding
+        if (cart.length === 0) {
+            alert('Your cart is empty. Please add items before proceeding to payment.');
+            return;
+        }
+
+        // Ensure stock check before proceeding with checkout
+        if (cart.some(item => item.quantity > item.stock)) {
+            alert('One or more items in your cart have insufficient stock.');
+            return;
+        }
+
         const totalAmount = parseFloat(document.getElementById("total-amount").textContent.replace(/[₱,]/g, ''));
         document.getElementById("payment-total").textContent = totalAmount.toFixed(2);
         document.getElementById("payment-due").textContent = totalAmount.toFixed(2);
         document.getElementById('payment-section').style.display = 'block';
     }
+
 
     function processPayment() {
         const totalAmount = parseFloat(document.getElementById("payment-total").textContent);
@@ -344,6 +358,7 @@
         document.getElementById('change-info').style.display = 'block';
         document.getElementById('change-amount').textContent = changeAmount.toFixed(2);
 
+        // Make sure stock is still available before checkout
         fetch("/checkout/", {
             method: "POST",
             headers: {
@@ -369,6 +384,17 @@
             console.error("Checkout failed:", error);
             alert("An error occurred during checkout.");
         });
+    }
+
+    // Check stock for a specific item
+    function checkStock(itemName) {
+        return fetch(`/check_stock/?item_name=${encodeURIComponent(itemName)}`, {
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => data.stock);
     }
 
     function removeFromCart(itemId) {

@@ -2,7 +2,6 @@
 
 {% block content %}
 
-<!-- Controls: Entries per page & Search -->
 <div class="controls-container">
     <div class="entries-control">
         <label for="entriesSelect">Show 
@@ -16,19 +15,32 @@
     </div>
 
     <form method="get" action="." class="search-form">
-        <label for="searchInput">Search:</label>
-        <input
-            type="text"
-            id="searchInput"
-            name="q"
-            class="search-input"
-            placeholder="Search item..."
-            value="{{ request.GET.q|default:'' }}"
-        />
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <label for="searchInput">Search:</label>
+            <input
+                type="text"
+                id="searchInput"
+                name="q"
+                class="search-input"
+                placeholder="Search item..."
+                value="{{ request.GET.q|default:'' }}"
+            />
+            
+            <label for="categorySelect">Category:</label>
+            <select name="category" id="categorySelect" class="entries-select">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="btn search-btn">Filter</button>
+        </div>
     </form>
 </div>
 
-<!-- Inventory Table -->
 <div class="form-container">
     <h3>Inventory Item List</h3>
     <div class="table-responsive">
@@ -50,7 +62,7 @@
             <tbody>
                 {% if items %}
                     {% for item in items %}
-                        <tr>
+                        <tr {% if item.quantity < 10 %}class="low-stock"{% endif %}>
                             <td>{{ forloop.counter }}</td>
                             <td>
                                 {% if item.image %}
@@ -67,43 +79,53 @@
                             <td>{{ item.price }}</td>
                             <td>{{ item.supplier.name }}</td>
                             <td>
-                                <a href="{% url 'update_item' item.id %}" class="btn update-btn">Update</a>
-                                <a href="{% url 'delete_item' item.id %}" class="btn delete-btn">Delete</a>
-                                <a href="{% url 'stock_card' item.id %}" class="btn stock-btn">Stock Card</a>
+                                <a href="{% url 'update_item' item.id %}" class="icon-btn edit" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'delete_item' item.id %}" class="icon-btn delete" title="Delete" onclick="openConfirmationModal(event, this.href);">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                                <a href="{% url 'stock_card' item.id %}" class="icon-btn stock-card" title="Stock Card">
+                                    <i class="fas fa-box"></i>
+                                </a>
                             </td>
                         </tr>
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="9">No items found.</td>
+                        <td colspan="10">No items found.</td>
                     </tr>
                 {% endif %}
             </tbody>
         </table>
     </div>
+
+    <div class="total-items">
+        <p>Total items in inventory: {{ items.count }}</p>
+    </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const searchInput = document.getElementById('searchInput');
-    const tableBody = document.querySelector('.inventory-table tbody');
+{% if messages %}
+    <div class="toast-alerts">
+        {% for message in messages %}
+            <div class="toast {{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
 
-    searchInput.addEventListener('input', function () {
-        const query = this.value;
+<!-- Confirmation Modal -->
+<div id="confirmationModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <p>Are you sure you want to delete this item?</p>
+        <div class="modal-actions">
+            <button id="cancelDelete" class="btn cancel-btn">Cancel</button>
+            <a href="#" id="confirmDelete" class="btn confirm-btn">Confirm</a>
+        </div>
+    </div>
+</div>
 
-        fetch(`{% url 'live_search_items' %}?q=${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(data => {
-                tableBody.innerHTML = data.html;
-            })
-            .catch(error => {
-                console.error('Error during live search:', error);
-            });
-    });
-});
-</script>
-
-<!-- Clean & Professional CSS -->
 <style>
     :root {
         --primary-color: #00796b;
@@ -126,26 +148,31 @@ document.addEventListener('DOMContentLoaded', function () {
         margin-bottom: 20px;
     }
 
-    .entries-select {
+    .entries-control, .search-form {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .entries-select, .search-input {
         padding: 6px 10px;
         border: 1px solid #ccc;
         border-radius: var(--border-radius);
         font-size: 1rem;
-        margin-left: 8px;
     }
 
-    .search-form {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .search-input {
-        width: 240px;
+    .search-btn {
+        background-color: var(--primary-color);
+        color: var(--text-light);
+        border: none;
         padding: 8px 12px;
-        border: 1px solid #ccc;
         border-radius: var(--border-radius);
-        font-size: 1rem;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .search-btn:hover {
+        background-color: #005b4f;
     }
 
     .form-container h3 {
@@ -175,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     .inventory-table th,
     .inventory-table td {
-        padding: 14px;
+        padding: 12px;
         text-align: center;
         font-size: 0.95rem;
         border: 1px solid #eee;
@@ -189,43 +216,31 @@ document.addEventListener('DOMContentLoaded', function () {
         background-color: #fafafa;
     }
 
-    .btn {
-        padding: 8px 14px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: var(--text-light);
+    .inventory-table tbody tr.low-stock {
+        background-color: #ffeb3b;
+    }
+
+    .icon-btn {
+        font-size: 1.4rem;
+        margin: 0 5px;
         text-decoration: none;
-        border-radius: var(--border-radius);
         transition: var(--transition);
-        display: inline-block;
-        margin: 2px;
     }
 
-    .update-btn {
-        background-color: var(--success-color);
+    .icon-btn:hover {
+        transform: scale(1.2);
     }
 
-    .update-btn:hover {
-        background-color: #66bb6a;
-        transform: scale(1.05);
+    .icon-btn.edit {
+        color: #00796b;
     }
 
-    .delete-btn {
-        background-color: var(--danger-color);
+    .icon-btn.delete {
+        color: #e57373;
     }
 
-    .delete-btn:hover {
-        background-color: #f44336;
-        transform: scale(1.05);
-    }
-
-    .stock-btn {
-        background-color: var(--accent-color);
-    }
-
-    .stock-btn:hover {
-        background-color: #42a5f5;
-        transform: scale(1.05);
+    .icon-btn.stock-card {
+        color: #64b5f6;
     }
 
     .item-img {
@@ -238,6 +253,97 @@ document.addEventListener('DOMContentLoaded', function () {
     .no-image {
         color: #aaa;
         font-style: italic;
+    }
+
+    .total-items {
+        margin-top: 20px;
+        font-size: 1rem;
+        color: var(--text-dark);
+    }
+
+    .toast-alerts {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+
+    .toast {
+        background-color: var(--success-color);
+        color: var(--text-light);
+        padding: 10px 20px;
+        margin-bottom: 10px;
+        border-radius: var(--border-radius);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        font-size: 0.9rem;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+    }
+
+    .toast.danger {
+        background-color: var(--danger-color);
+    }
+
+    .toast.show {
+        opacity: 1;
+    }
+
+    /* Modal Styles */
+    .modal {
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background-color: #fff;
+        padding: 20px 30px;
+        border-radius: var(--border-radius);
+        text-align: center;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        max-width: 400px;
+        width: 90%;
+    }
+
+    .modal-actions {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .cancel-btn {
+        background-color: #aaa;
+        color: white;
+    }
+
+    .confirm-btn {
+        background-color: var(--danger-color);
+        color: white;
+    }
+
+    .cancel-btn, .confirm-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .cancel-btn:hover {
+        background-color: #888;
+    }
+
+    .confirm-btn:hover {
+        background-color: #d32f2f;
     }
 
     @media (max-width: 768px) {
@@ -257,5 +363,27 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 </style>
+
+<script>
+    const modal = document.getElementById('confirmationModal');
+    const cancelBtn = document.getElementById('cancelDelete');
+    const confirmBtn = document.getElementById('confirmDelete');
+
+    function openConfirmationModal(event, url) {
+        event.preventDefault();
+        confirmBtn.href = url;
+        modal.style.display = 'flex';
+    }
+
+    cancelBtn.onclick = function () {
+        modal.style.display = 'none';
+    }
+
+    window.onclick = function (event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
 
 {% endblock %}

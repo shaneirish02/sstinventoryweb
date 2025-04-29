@@ -14,6 +14,7 @@
     <td>{{ item.quantity }}</td>
     <td>{{ item.unit }}</td>
     <td>{{ item.price }}</td>
+    <td>{{ item.supplier.name }}</td>
     <td>
         <a href="{% url 'update_item' item.id %}" class="btn update-btn">Update</a>
         <a href="{% url 'delete_item' item.id %}" class="btn delete-btn">Delete</a>

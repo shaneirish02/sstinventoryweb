@@ -1,5 +1,7 @@
-{% extends 'base.html' %}
 
+
+{% extends 'base.html' %}
+{% load custom_filters %}
 {% block content %}
 <div class="container">
     <!-- Header -->
@@ -24,8 +26,40 @@
         </div>
     </div>
 
-    <!-- Stock Table -->
+    <!-- Stock Logs Table -->
+    <div class="logs-table-wrapper">
+        <h3>Stock Logs</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Transaction Type</th>
+                    <th>Qty</th>
+                    <th>Value</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in transactions %}
+                    <tr>
+                        <td>{{ tx.date|date:"Y-m-d H:i" }}</td>
+                        <td>{{ tx.transaction_type }}</td>
+                        <td>{{ tx.quantity }}</td>
+                        <td>{{ tx.value|floatformat:2 }}</td>
+                        <td>{{ tx.remarks }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="no-data">No stock logs found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Stock Summary Table -->
     <div class="stock-table-wrapper">
+        <h3>Stock Summary</h3>
         <table>
             <thead>
                 <tr>
@@ -47,6 +81,9 @@
                 </tr>
             </thead>
             <tbody>
+                {% with current_qty=item.quantity %}
+                {% with current_value=item.quantity|multiply:item.price %}
+                
                 {% for tx in transactions %}
                     <tr class="{% if tx.transaction_type == 'IN' %}in-row{% else %}out-row{% endif %}">
                         <td>{{ tx.date|date:"Y-m-d H:i" }}</td>
@@ -54,24 +91,36 @@
                         {% if tx.transaction_type == 'IN' %}
                             <td>{{ tx.quantity }}</td>
                             <td>{{ item.price }}</td>
-                            <td>{{ tx.quantity|floatformat:2|floatformat:"g" }}</td>
+                            <td>{{ tx.value }}</td>
                             <td></td><td></td><td></td>
+                            
+                            {% with current_qty=current_qty|add:tx.quantity %}
+                            {% with current_value=current_value|add:tx.value %}
+                            {% endwith %}
+                            {% endwith %}
                         {% else %}
                             <td></td><td></td><td></td>
                             <td>{{ tx.quantity }}</td>
                             <td>{{ item.price }}</td>
-                            <td>{{ tx.quantity|floatformat:2|floatformat:"g" }}</td>
+                            <td>{{ tx.value }}</td>
+                            
+                            {% with current_qty=current_qty|subtract:tx.quantity %}
+                            {% with current_value=current_value|subtract:tx.value %}
+                            {% endwith %}
+                            {% endwith %}
                         {% endif %}
 
-                        <td>{{ item.quantity }}</td>
+                        <td>{{ current_qty }}</td>
                         <td>{{ item.price }}</td>
-                        <td>{{ item.quantity|floatformat:2|floatformat:"g" }}</td>
+                        <td>{{ current_value|floatformat:2 }}</td>
                     </tr>
                 {% empty %}
                     <tr>
                         <td colspan="10" class="no-data">No stock transactions found.</td>
                     </tr>
                 {% endfor %}
+                {% endwith %}
+                {% endwith %}
             </tbody>
         </table>
     </div>
@@ -130,7 +179,8 @@
     margin: 4px 0;
 }
 
-.stock-table-wrapper {
+.logs-table-wrapper, .stock-table-wrapper {
+    margin-top: 30px;
     overflow-x: auto;
 }
 

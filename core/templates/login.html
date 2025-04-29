@@ -5,102 +5,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
     <style>
         body {
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1062e4;
-            height: 100vh;
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(to bottom right, #4158d0, #c850c0, #ffcc70);
+            background-size: cover;
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
         }
-
-        .logo-container {
-            margin-bottom: 20px;
-        }
-
 
         .login-box {
-            background-color: #052b56;
-            border-radius: 8px;
-            width: 320px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            width: 360px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
             text-align: center;
+            overflow: hidden;
         }
 
         .login-box-header {
-            background-color: #fbc55c;
+            background: linear-gradient(135deg, #4158d0, #c850c0, #ffcc70);
             padding: 20px;
-            color: white;
-            font-weight: bold;
+            color: #fff;
             font-size: 22px;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
+            font-weight: bold;
         }
 
-        .login-box form {
-            padding: 30px 25px;
+        form {
+            padding: 25px 30px 30px;
         }
 
         .form-group {
             position: relative;
-            margin-bottom: 20px;
+            margin-bottom: 22px;
         }
 
         .form-group i {
             position: absolute;
             top: 50%;
-            left: 10px;
+            left: 12px;
             transform: translateY(-50%);
-            color: #666;
+            color: #888;
         }
 
         .form-group input {
-            width: 80%;
-            padding: 10px 10px 10px 35px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background-color: #fff;
+            width: 100%;
+            padding: 10px 12px 10px 38px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
             font-size: 14px;
-            outline: none;
+            color: #333;
+            box-sizing: border-box;
         }
 
         .form-group input:focus {
-            border-color: #007bff;
+            outline: 2px solid #c850c0;
+            background-color: #fff;
+        }
+
+        .options {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            margin-bottom: 20px;
+            color: #eee;
+        }
+
+        .options input[type="checkbox"] {
+            margin-right: 6px;
         }
 
         .login-btn {
             width: 100%;
-            padding: 10px;
-            background-color: #fbc55c;
+            padding: 12px;
+            background: linear-gradient(135deg, #4158d0, #c850c0, #ffcc70);
             border: none;
-            color: #333;
+            color: #fff;
             font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
             cursor: pointer;
-            border-radius: 4px;
+            transition: transform 0.2s;
         }
 
         .login-btn:hover {
-            background-color: #e5ae4e;
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #3d4db5, #b63aa6, #f6c149);
         }
 
         .error {
-            color: red;
+            color: #ff6b6b;
             font-size: 14px;
-            margin-bottom: 10px;
-            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 480px) {
+            .login-box {
+                width: 90%;
+                margin: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    
+
     <div class="login-box">
-        <div class="login-box-header">
-            SST Inventory POS
-        </div>
+        <div class="login-box-header">SST Inventory POS</div>
         <form method="post">
             {% csrf_token %}
             {% if error %}
@@ -114,8 +134,12 @@
                 <i class="fas fa-lock"></i>
                 <input type="password" name="password" placeholder="Password" required>
             </div>
+            <div class="options">
+                <label><input type="checkbox" name="remember"> Remember Me</label>
+            </div>
             <button type="submit" class="login-btn">Login</button>
         </form>
     </div>
+
 </body>
 </html>

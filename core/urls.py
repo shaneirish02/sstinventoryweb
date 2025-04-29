@@ -36,7 +36,7 @@ urlpatterns = [
     path('suppliers/<int:pk>/delete/', views.supplier_confirm_delete, name='supplier_confirm_delete'),
     path('stock_card/<int:item_id>/', views.stock_card, name='stock_card'),
     path('search_items/', views.search_items, name='search_items'),
-
+    path('download-sales-report/', views.download_sales_report, name='download_sales_report'),
 ]
 
 # Serve static and media files during development
@@ -44,3 +44,4 @@ if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 if settings.DEBUG:    
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

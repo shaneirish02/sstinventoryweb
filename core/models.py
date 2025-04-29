@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django import forms
 from django.http import JsonResponse
 from django.shortcuts import render
-
+from django.utils import timezone
 
 def some_function():
     from .models import Item
@@ -55,15 +55,17 @@ class Item(models.Model):
         ('pound', 'Pound'),
         ('gallons', 'Gallons'),
     ]
-    
+
     name = models.CharField(max_length=255)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    category = models.ForeignKey('Category', on_delete=models.CASCADE)
     description = models.TextField()
-    quantity = models.PositiveIntegerField()
+    quantity = models.IntegerField(default=0)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    supplier = models.ForeignKey(Supplier, on_delete=models.SET_DEFAULT, default=1)
+    supplier = models.ForeignKey('Supplier', on_delete=models.SET_DEFAULT, default=1)
     unit = models.CharField(max_length=100, choices=UNIT_CHOICES)  # Unit field with choices
     image = models.ImageField(upload_to='items_images/', blank=True, null=True)
+    date_added = models.DateTimeField(default=timezone.now)
+    last_updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
@@ -222,3 +224,8 @@ class StockTransaction(models.Model):
     unit = models.CharField(max_length=20, default="pcs")
     date = models.DateTimeField(auto_now_add=True)
     remarks = models.TextField(blank=True, null=True)
+
+    @property
+    def value(self):
+        return self.quantity * self.item.price  # Assuming `price` is a field in the Item model
+

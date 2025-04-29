@@ -26,7 +26,8 @@ SECRET_KEY = 'django-insecure-v_z)sosn-q)oss#tk)x+5o_qqx35x@)yl4vk7q1*$p-4mh(c0@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']  # or your IP explicitly
+
 
 
 # Application definition
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'django.contrib.humanize',
+    'pos_saleinventory'
 ]
 
 MIDDLEWARE = [
@@ -103,7 +105,7 @@ WSGI_APPLICATION = 'pos_saleinventory.wsgi.application'
 DATABASES = {
     'default': {
        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'sales_inventory',      
+        'NAME': 'final_inventory_sales',      
         'USER': 'root',          
         'PASSWORD': '',     
         'HOST': 'localhost',
