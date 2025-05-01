@@ -9,6 +9,8 @@ from django.http import JsonResponse
 import datetime
 import json
 from django.contrib import messages
+from .models import UserProfile
+from rest_framework.authtoken.models import Token
 
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -29,7 +31,13 @@ from xhtml2pdf import pisa
 from docx import Document
 import io
 from django.utils.timezone import now
-
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth import authenticate
+from .serializer import UserSerializer
 
 
 def logout_view(request):
@@ -727,3 +735,63 @@ def stock_in(request, item_id):
         return redirect('stock_summary', item_id=item.id)  # Redirect to the stock summary page
 
     return render(request, 'stock_in.html', {'item': item})
+
+class LoginView(APIView):
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if not username or not password:
+            return Response({'error': 'Username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = authenticate(username=username, password=password)
+
+        if user is not None:
+            token, created = Token.objects.get_or_create(user=user)
+
+            try:
+                role = user.userprofile.account_type
+            except UserProfile.DoesNotExist:
+                return Response({'error': 'User profile not found.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response({
+                'token': token.key,
+                'role': role
+            }, status=status.HTTP_200_OK)
+
+        return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_info(request):
+    user = request.user
+    try:
+        profile = UserProfile.objects.get(user=user)
+        role = profile.account_type
+    except UserProfile.DoesNotExist:
+        return Response({'error': 'User profile not found'}, status=500)
+
+    return Response({
+        'username': user.username,
+        'role': role
+    })
+
+class DashboardStatsView(APIView):
+    def get(self, request):
+        # Fetch your stats here
+        total_items = Item.objects.count()
+        # ✅ CORRECT
+        total_sales = Sale.objects.aggregate(total=Sum('total_price'))['total']
+        total_categories = Category.objects.count()
+        total_users = User.objects.count()
+
+        data = {
+            'total_items': total_items,
+            'total_sales': total_sales,
+            'total_categories': total_categories,
+            'total_users': total_users,
+        }
+        
+        return Response(data, status=status.HTTP_200_OK)

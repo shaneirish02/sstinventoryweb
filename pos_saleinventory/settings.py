@@ -30,6 +30,7 @@ ALLOWED_HOSTS = ['*']  # or your IP explicitly
 
 
 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -41,10 +42,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
     'rest_framework',
+    'rest_framework_simplejwt',
     'rest_framework.authtoken',
     'corsheaders',
     'django.contrib.humanize',
-    'pos_saleinventory'
+    'pos_saleinventory',
 ]
 
 MIDDLEWARE = [
@@ -62,12 +64,24 @@ MIDDLEWARE = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ]
+}
+
+# Add JWT Token URL for login
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
 }
 
 ROOT_URLCONF = 'pos_saleinventory.urls'
 
 CORS_ALLOW_ALL_ORIGINS = True
+
 
 
 

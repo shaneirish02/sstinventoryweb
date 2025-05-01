@@ -20,6 +20,7 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"{self.user.username} ({self.account_type})"
 
+
 # Model for Category
 class Category(models.Model):
     name = models.CharField(max_length=255)
