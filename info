@@ -1,10 +1,17 @@
+sumaria
 superadmin
-admin1234
 
 admin
-chelle18
+Shannen1234
 
 cashier
-admin2003
+Mariah1234
 
-http://192.168.92.113:8000
+
+
+
+python manage.py makemigrations
+python manage.py migrate
+python manage.py runserver   
+
+python manage.py createsuperuser

@@ -50,6 +50,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # 🔥 This must come first
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -57,7 +58,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 
@@ -81,6 +81,7 @@ SIMPLE_JWT = {
 ROOT_URLCONF = 'pos_saleinventory.urls'
 
 CORS_ALLOW_ALL_ORIGINS = True
+    
 
 
 
@@ -119,7 +120,7 @@ WSGI_APPLICATION = 'pos_saleinventory.wsgi.application'
 DATABASES = {
     'default': {
        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'final_inventory_sales',      
+        'NAME': 'sumariaPOS',      
         'USER': 'root',          
         'PASSWORD': '',     
         'HOST': 'localhost',

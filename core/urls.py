@@ -6,7 +6,9 @@ from django.conf.urls.static import static
 from .views import LoginView  # This should match the class name exactly
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .views import user_info
+from .views import category_list_api
 from .views import DashboardStatsView
+from .views import supplier_list_api
 
 urlpatterns = [
     # Regular views
@@ -31,7 +33,7 @@ urlpatterns = [
     path('record_sale/', views.record_sale, name='record_sale'),
     path('clear_cart/', views.clear_cart, name='clear_cart'),
     path('remove_from_cart/', views.remove_from_cart, name='remove_from_cart'),
-    path('suppliers/', views.supplier_list, name='supplier_list'),
+    path('api/suppliers/', supplier_list_api, name='supplier_list_api'),
     path('suppliers/create/', views.supplier_create, name='supplier_create'),
     path('suppliers/<int:pk>/', views.supplier_detail, name='supplier_detail'),
     path('suppliers/<int:pk>/edit/', views.supplier_update, name='supplier_update'),
@@ -44,6 +46,9 @@ urlpatterns = [
     path('api/login/', LoginView.as_view(), name='api-login'),  # API login
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/user/', user_info),
+    path('api/sales-report/', views.sales_report_api, name='sales_report_api'),
+    path('api/inventory/', views.inventory_api, name='inventory_api'),
+    path('api/categories/', category_list_api, name='category-list-api'),
     
     # Dashboard Stats API - Fix the URL here
     path('api/dashboard/', DashboardStatsView.as_view(), name='dashboard-stats'),  # Use .as_view() for class-based view

@@ -37,7 +37,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
-from .serializer import UserSerializer
+from .serializer import UserSerializer, ItemSerializer
+from datetime import datetime, timedelta
 
 
 def logout_view(request):
@@ -157,15 +158,17 @@ def homepage(request):
 
 @login_required
 def inventory_management(request):
-   
     items = Item.objects.all()
-    return render(request, 'inventory_management.html', {'items': items})
+    total_stock = sum(item.quantity for item in items)  # Sum of all item quantities
+    return render(request, 'inventory_management.html', {'items': items, 'total_stock': total_stock})
 
 @login_required
 def admin_dashboard(request):
     # Query the sales data, ensuring the correct field name is used
     sales_data = Sale.objects.all().order_by('total_price')  # Corrected ordering
     return render(request, 'admin_dashboard.html', {'sales_data': sales_data})
+
+
 
 @login_required
 def inventory_management(request):
@@ -191,11 +194,21 @@ def inventory_management(request):
         except:
             pass
 
+    # Calculate total stock
+    total_stock = sum(item.quantity for item in items)
+
     context = {
         'items': items,
         'categories': categories,
+        'total_stock': total_stock,
     }
     return render(request, 'inventory_management.html', context)
+
+@api_view(['GET'])
+def inventory_api(request):
+    items = Item.objects.all()
+    serializer = ItemSerializer(items, many=True, context={'request': request})
+    return Response(serializer.data)
 
 @login_required
 def bulk_delete_items(request):
@@ -207,36 +220,107 @@ def bulk_delete_items(request):
         messages.warning(request, "No items selected for deletion.")
     return redirect('inventory_management')
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from datetime import datetime, timedelta
+from .models import Sale
+
 @login_required
 def sales_report(request):
-    period = request.GET.get('period', 'today').lower()  # Ensure the period is in lowercase
-    
-    today = datetime.now().date()  # Get today's date correctly
+    # Get query parameters
+    period = request.GET.get('period', 'today').lower()
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    today = datetime.now().date()
 
-    # Filter sales based on the selected period
-    if period == 'today':
-        sales_data = Sale.objects.filter(date=today)
-    elif period == 'week':
-        start_of_week = today - timedelta(days=today.weekday())  # Get the start of the current week (Monday)
-        sales_data = Sale.objects.filter(date__gte=start_of_week)
-    elif period == 'month':
-        sales_data = Sale.objects.filter(date__month=today.month, date__year=today.year)
-    elif period == 'year':
-        sales_data = Sale.objects.filter(date__year=today.year)
+    # Initialize sales_data
+    sales_data = Sale.objects.none()
+
+    if start_date and end_date:
+        try:
+            # Convert string to date object
+            start = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end = datetime.strptime(end_date, '%Y-%m-%d').date()
+            sales_data = Sale.objects.filter(date__range=(start, end))
+            selected_period = f"from {start.strftime('%b %d, %Y')} to {end.strftime('%b %d, %Y')}"
+        except ValueError:
+            selected_period = "Invalid Date Range"
     else:
-        sales_data = Sale.objects.all()  # Fallback for any unexpected 'period' value
-    
+        # Period-based filtering
+        if period == 'today':
+            sales_data = Sale.objects.filter(date=today)
+        elif period == 'week':
+            start_of_week = today - timedelta(days=today.weekday())
+            sales_data = Sale.objects.filter(date__gte=start_of_week)
+        elif period == 'month':
+            sales_data = Sale.objects.filter(date__month=today.month, date__year=today.year)
+        elif period == 'year':
+            sales_data = Sale.objects.filter(date__year=today.year)
+        else:
+            sales_data = Sale.objects.all()
+
+        selected_period = period.capitalize()
+
+
     # Calculate the total sales
     total_sales = sum(sale.total_price for sale in sales_data)
+    
 
-    # Render the report page with the selected period, sales data, and total sales
+
     return render(request, 'sales_report.html', {
-        'selected_period': period.capitalize(),  # Capitalize the period for display
+        'selected_period': selected_period,
         'sales_data': sales_data,
         'total_sales': total_sales,
+      
         'today': today.strftime('%Y-%m-%d'),
     })
 
+def sales_report_api(request):
+    period = request.GET.get('period', 'today').lower()
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    today = datetime.now().date()
+
+    sales_data = Sale.objects.none()
+
+    if start_date and end_date:
+        try:
+            start = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end = datetime.strptime(end_date, '%Y-%m-%d').date()
+            sales_data = Sale.objects.filter(date__range=(start, end))
+        except ValueError:
+            return JsonResponse({'error': 'Invalid date format'}, status=400)
+    else:
+        if period == 'today':
+            sales_data = Sale.objects.filter(date=today)
+        elif period == 'week':
+            start_of_week = today - timedelta(days=today.weekday())
+            sales_data = Sale.objects.filter(date__gte=start_of_week)
+        elif period == 'month':
+            sales_data = Sale.objects.filter(date__month=today.month, date__year=today.year)
+        elif period == 'year':
+            sales_data = Sale.objects.filter(date__year=today.year)
+        else:
+            sales_data = Sale.objects.all()
+
+    results = []
+    for sale in sales_data:
+        for item in sale.items.all():
+            results.append({
+                'date': sale.date.strftime('%Y-%m-%d'),
+                'item_name': item.item.name,
+                'price': float(item.price),
+                'quantity': item.quantity,
+                'subtotal': float(item.subtotal),
+            })
+
+    total_sales = sum(float(sale.total_price) for sale in sales_data)
+
+    return JsonResponse({
+        'sales': results,
+        'total_sales': total_sales,
+        'period': period
+    }, safe=False)
 
 
 def add_item(request):
@@ -294,6 +378,11 @@ def category_management(request):
 
     categories = Category.objects.all()
     return render(request, 'category_management.html', {'categories': categories})
+
+def category_list_api(request):
+    categories = Category.objects.all().values('id', 'name')
+    return JsonResponse(list(categories), safe=False)
+
 
 @login_required
 def user_management(request):
@@ -515,9 +604,13 @@ def clear_cart(request):
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
 
-def supplier_list(request):
-    suppliers = Supplier.objects.all()
-    return render(request, 'supplier_list.html', {'suppliers': suppliers})
+def supplier_list_api(request):
+    suppliers = Supplier.objects.all().values(
+        'id', 'name', 'contact_person', 'phone', 'email', 'address', 'company', 'created_at'
+    )
+    suppliers_list = list(suppliers)
+    return JsonResponse(suppliers_list, safe=False)
+
 
 def supplier_create(request):
     if request.method == 'POST':
