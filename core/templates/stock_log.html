@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2 class="page-title">Stock Log</h2>
+    <div class="form-container" style="background-color: var(--card-bg); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); border-radius: 10px; overflow: hidden;">
+        <table class="table" style="width:100%; border-spacing: 0; border-collapse: collapse;">
+            <thead style="background-color: var(--hover-bg); color: var(--primary); text-transform: uppercase;">
+                <tr>
+                    <th>Date</th>
+                    <th>Item</th>
+                    <th>Type</th>
+                    <th>Quantity</th>
+                    <th>Unit</th>
+                    <th>Value</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.date|date:"Y-m-d H:i" }}</td>
+                    <td>{{ log.item.name }}</td>
+                    <td>{{ log.get_transaction_type_display }}</td>
+                    <td>{{ log.quantity }}</td>
+                    <td>{{ log.unit }}</td>
+                    <td>{{ log.value }}</td>
+                    <td>{{ log.remarks }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align:center; color: var(--secondary); padding: 20px;">No stock log entries available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .page-title {
+        font-size: 28px;
+        font-weight: 600;
+        
+        margin-bottom: 20px;
+        color: var(--primary);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 15px;
+    }
+
+    table th, table td {
+        padding: 15px;
+        text-align: center;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    table th {
+        font-weight: 500;
+        background-color: var(--hover-bg);
+        color: var(--header-text);
+        letter-spacing: 1px;
+    }
+
+    table tr:nth-child(odd) {
+        background-color:rgba(255, 216, 216, 0.24);
+    }
+
+    table tr:nth-child(even) {
+        background-color: #ffffff;
+    }
+
+    table tr:hover {
+        background-color: var(--hover-bg);
+        transition: background-color 0.3s ease-in-out;
+    }
+
+    .form-container {
+        padding: 20px;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .table td {
+        color: var(--text-color);
+    }
+
+    td {
+        vertical-align: middle;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        table th, table td {
+            padding: 12px;
+        }
+    }
+</style>
+{% endblock %}

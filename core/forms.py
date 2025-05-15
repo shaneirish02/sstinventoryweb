@@ -6,9 +6,10 @@ from django import forms
 from .models import Supplier
 
 ACCOUNT_TYPES = (
-    ('Admin', 'Admin'),
-    ('Cashier', 'Cashier'),
+    ('admin', 'Admin'),
+    ('cashier', 'Cashier'),
 )
+
 
 class UserForm(UserCreationForm):
     account_type = forms.ChoiceField(choices=ACCOUNT_TYPES)

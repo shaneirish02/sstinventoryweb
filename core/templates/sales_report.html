@@ -44,23 +44,18 @@
                 <thead>
                     <tr>
                         <th>Date</th>
-                        <th>Item Name</th>
-                        <th>Price Per Item</th>
-                        <th>Quantity Sold</th>
+                        <th>Time</th>
                         <th>Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for sale in sales_data %}
-                        {% for item in sale.items.all %}
-                            <tr>
-                                <td>{{ sale.date|date:"Y-m-d" }}</td>
-                                <td>{{ item.item.name }}</td>
-                                <td class="numeric">₱{{ item.price }}</td>
-                                <td class="numeric">{{ item.quantity }}</td>
-                                <td class="numeric">₱{{ item.subtotal }}</td>
-                            </tr>
-                        {% endfor %}
+                        <tr>
+                            <td>{{ sale.timestamp|date:"Y-m-d" }}</td>
+                            <td>{{ sale.timestamp|time:"H:i:s" }}</td>
+                            <td class="numeric">₱{{ sale.total_price }}</td>
+                        </tr>
+
                     {% endfor %}
                 </tbody>
             </table>
@@ -73,12 +68,8 @@
 
 <!-- Download Buttons -->
 <div class="download-buttons">
-    <a href="{% url 'download_sales_report' %}?start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}&format=pdf" class="btn period-btn">
-        <i class="fas fa-file-pdf"></i> Download Report (PDF)
-    </a>
-    <a href="{% url 'download_sales_report' %}?start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}&format=docx" class="btn period-btn">
-        <i class="fas fa-file-word"></i> Download Report (DOCX)
-    </a>
+    <a href="{% url 'download_sales_report' %}?period={{ request.GET.period }}&format=pdf">Download PDF</a>
+    <a href="{% url 'download_sales_report' %}?period={{ request.GET.period }}&format=docx">Download DOCX</a>
 </div>
 
 <!-- CSS Styles and Script -->
@@ -106,12 +97,12 @@
     }
 
     .period-btn {
-        background-color: #008585;
+        background-color: #2E5EAA;
         color: white;
         padding: 14px 24px;
         font-weight: bold;
         border: none;
-        border-radius: 10px;
+        border-style: outset;: 10px;
         cursor: pointer;
         transition: background-color 0.3s ease, transform 0.2s ease;
         display: flex;
@@ -121,7 +112,7 @@
     }
 
     .period-btn:hover {
-        background-color: #004343;
+        background-color: #2E5EAA;
         transform: translateY(-3px);
     }
 
@@ -145,7 +136,7 @@
 
     .date-range-form input[type="date"] {
         padding: 10px;
-        border-radius: 8px;
+        border-style: outset;: 8px;
         border: 1px solid #ccc;
         font-size: 1rem;
     }
@@ -153,7 +144,7 @@
     .sales-summary {
         background-color: #fff;
         padding: 40px;
-        border-radius: 10px;
+        border-style: outset;: 10px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         margin-top: 30px;
     }
@@ -167,7 +158,7 @@
     .total-sales {
         font-size: 1.4rem;
         font-weight: bold;
-        color: #008585;
+        color: #2E5EAA;
         margin-bottom: 30px;
     }
 
@@ -179,14 +170,14 @@
     }
 
     .sales-table thead {
-        background-color: #008585;
+        background-color: #2E5EAA;
         color: white;
     }
 
     .sales-table th,
     .sales-table td {
         padding: 16px;
-        text-align: left;
+        text-align: center;
         border-bottom: 1px solid #ddd;
     }
 
@@ -197,7 +188,7 @@
     }
 
     .sales-table td.numeric {
-        text-align: right;
+        text-align: center;
     }
 
     .sales-table tbody tr:nth-child(even) {

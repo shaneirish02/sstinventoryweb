@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Item, Category, Sale, UserProfile, Supplier, CartItem, StockTransaction
+from .models import Item, Category, Sale, UserProfile, Supplier, CartItem, StockTransaction, SaleItem
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login
 from django.db.models import Sum
@@ -30,6 +30,9 @@ from django.utils import timezone
 from xhtml2pdf import pisa
 from docx import Document
 import io
+import os
+from django.conf import settings
+from reportlab.lib import colors
 from django.utils.timezone import now
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -37,8 +40,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
-from .serializer import UserSerializer, ItemSerializer
+from .serializer import UserSerializer, ItemSerializer, StockTransactionSerializer
 from datetime import datetime, timedelta
+from .models import StockTransaction
+
 
 
 def logout_view(request):
@@ -70,37 +75,39 @@ def checkout(request):
 
             print("Cart in session:", cart)
 
+            # Process each item in the cart
             for cart_item in cart:
                 print("Cart item:", cart_item)
                 item_id = cart_item.get('id')
                 if not item_id:
                     return JsonResponse({'success': False, 'message': 'Missing item ID in cart.', 'cart_item': cart_item})
 
-            try:
-                item = Item.objects.get(id=item_id)
-            except Item.DoesNotExist:
-                return JsonResponse({'success': False, 'message': f'Item with ID {item_id} not found.'})
+                try:
+                    item = Item.objects.get(id=item_id)
+                except Item.DoesNotExist:
+                    return JsonResponse({'success': False, 'message': f'Item with ID {item_id} not found.'})
 
-            sale.items.create(
-                item=item,
-                quantity=cart_item['quantity'],
-                price=item.price,
-                subtotal=item.price * cart_item['quantity']
-            )
+                # Create sale item entry
+                sale.items.create(
+                    item=item,
+                    quantity=cart_item['quantity'],
+                    price=item.price,
+                    subtotal=item.price * cart_item['quantity']
+                )
 
-            StockTransaction.objects.create(
-                item=item,
-                transaction_type='OUT',
-                quantity=cart_item['quantity'],
-                unit=item.unit,
-                date=timezone.now(),
-                remarks='Checked out via POS'
-            )
+                # Create stock transaction entry for each item
+                StockTransaction.objects.create(
+                    item=item,
+                    transaction_type='OUT',  # 'OUT' means item is being checked out
+                    quantity=cart_item['quantity'],
+                    unit=item.unit,
+                    date=timezone.now(),
+                    remarks='Checked out via POS'
+                )
 
-            # Deduct stock
-            item.quantity -= cart_item['quantity']
-            item.save()
-
+                # Deduct stock
+                item.quantity -= cart_item['quantity']
+                item.save()
 
             # Clear cart after successful checkout
             request.session['cart'] = []
@@ -120,6 +127,7 @@ def checkout(request):
             return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
 
     return JsonResponse({'success': False, 'message': 'Invalid request method.'})
+
 
 def user_login(request):
     if request.method == 'POST':
@@ -164,9 +172,36 @@ def inventory_management(request):
 
 @login_required
 def admin_dashboard(request):
-    # Query the sales data, ensuring the correct field name is used
-    sales_data = Sale.objects.all().order_by('total_price')  # Corrected ordering
-    return render(request, 'admin_dashboard.html', {'sales_data': sales_data})
+    total_items = Item.objects.count()
+    total_sales = SaleItem.objects.aggregate(total=Sum('subtotal'))['total'] or 0
+    total_categories = Category.objects.count()
+    total_users = User.objects.count()
+
+    
+    top_selling_items = (
+        SaleItem.objects
+        .select_related('item')  
+        .values('item__name', 'item__image') 
+        .annotate(total_quantity=Sum('quantity'))
+        .order_by('-total_quantity')[:3]
+    )
+
+    context = {
+        'total_items': total_items,
+        'total_sales': total_sales,
+        'total_categories': total_categories,
+        'total_users': total_users,
+        'top_selling_items': top_selling_items,
+    }
+
+    return render(request, 'admin_dashboard.html', context)
+
+
+
+
+def stock_log(request):
+    logs = StockTransaction.objects.select_related('item').order_by('-date')
+    return render(request, 'stock_log.html', {'logs': logs})
 
 
 
@@ -238,27 +273,25 @@ def sales_report(request):
 
     if start_date and end_date:
         try:
-            # Convert string to date object
-            start = datetime.strptime(start_date, '%Y-%m-%d').date()
-            end = datetime.strptime(end_date, '%Y-%m-%d').date()
-            sales_data = Sale.objects.filter(date__range=(start, end))
-            selected_period = f"from {start.strftime('%b %d, %Y')} to {end.strftime('%b %d, %Y')}"
+            start = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end = datetime.strptime(end_date, "%Y-%m-%d").date()
+            sales_data = Sale.objects.filter(timestamp__date__range=(start, end))
+            selected_period = f"{start} to {end}"
         except ValueError:
-            selected_period = "Invalid Date Range"
+            selected_period = "Invalid Date Format"
+            sales_data = Sale.objects.none()
     else:
-        # Period-based filtering
         if period == 'today':
-            sales_data = Sale.objects.filter(date=today)
+            sales_data = Sale.objects.filter(timestamp__date=today).prefetch_related('items__item')
         elif period == 'week':
             start_of_week = today - timedelta(days=today.weekday())
-            sales_data = Sale.objects.filter(date__gte=start_of_week)
+            sales_data = Sale.objects.filter(timestamp__date__gte=start_of_week)
         elif period == 'month':
-            sales_data = Sale.objects.filter(date__month=today.month, date__year=today.year)
+            sales_data = Sale.objects.filter(timestamp__month=today.month, timestamp__year=today.year)
         elif period == 'year':
-            sales_data = Sale.objects.filter(date__year=today.year)
+            sales_data = Sale.objects.filter(timestamp__year=today.year)
         else:
             sales_data = Sale.objects.all()
-
         selected_period = period.capitalize()
 
 
@@ -275,52 +308,51 @@ def sales_report(request):
         'today': today.strftime('%Y-%m-%d'),
     })
 
+
 def sales_report_api(request):
     period = request.GET.get('period', 'today').lower()
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     today = datetime.now().date()
 
+    # Initialize sales_data
     sales_data = Sale.objects.none()
 
     if start_date and end_date:
-        try:
-            start = datetime.strptime(start_date, '%Y-%m-%d').date()
-            end = datetime.strptime(end_date, '%Y-%m-%d').date()
-            sales_data = Sale.objects.filter(date__range=(start, end))
-        except ValueError:
-            return JsonResponse({'error': 'Invalid date format'}, status=400)
+        sales_data = Sale.objects.filter(timestamp__date__range=(start_date, end_date))
     else:
         if period == 'today':
-            sales_data = Sale.objects.filter(date=today)
+            sales_data = Sale.objects.filter(timestamp__date=today).prefetch_related('items__item')
         elif period == 'week':
             start_of_week = today - timedelta(days=today.weekday())
-            sales_data = Sale.objects.filter(date__gte=start_of_week)
+            sales_data = Sale.objects.filter(timestamp__date__gte=start_of_week)
         elif period == 'month':
-            sales_data = Sale.objects.filter(date__month=today.month, date__year=today.year)
+            sales_data = Sale.objects.filter(timestamp__month=today.month, timestamp__year=today.year)
         elif period == 'year':
-            sales_data = Sale.objects.filter(date__year=today.year)
+            sales_data = Sale.objects.filter(timestamp__year=today.year)
         else:
             sales_data = Sale.objects.all()
 
-    results = []
-    for sale in sales_data:
-        for item in sale.items.all():
-            results.append({
-                'date': sale.date.strftime('%Y-%m-%d'),
-                'item_name': item.item.name,
-                'price': float(item.price),
-                'quantity': item.quantity,
-                'subtotal': float(item.subtotal),
-            })
+        selected_period = period.capitalize()
 
-    total_sales = sum(float(sale.total_price) for sale in sales_data)
+    # Calculate the total sales
+    total_sales = sum(sale.total_price for sale in sales_data)
+
+    # Prepare the response data
+    sales_data_list = []
+    for sale in sales_data:
+        sales_data_list.append({
+            'timestamp': sale.timestamp,
+            'total_price': sale.total_price
+        })
 
     return JsonResponse({
-        'sales': results,
+        'selected_period': selected_period,
+        'sales_data': sales_data_list,
         'total_sales': total_sales,
-        'period': period
-    }, safe=False)
+    })
+
+
 
 
 def add_item(request):
@@ -383,7 +415,6 @@ def category_list_api(request):
     categories = Category.objects.all().values('id', 'name')
     return JsonResponse(list(categories), safe=False)
 
-
 @login_required
 def user_management(request):
     if request.method == 'POST':
@@ -392,11 +423,16 @@ def user_management(request):
             user = form.save()
             account_type = form.cleaned_data['account_type']
             UserProfile.objects.create(user=user, account_type=account_type)
+            print("✅ New user created:", user.username)
+            print("✅ Account type:", account_type)
             return redirect('user_management')
+        else:
+            print("❌ Form errors:", form.errors)
     else:
         form = UserForm()
 
-    users = User.objects.all().select_related('userprofile')  # so we can access user.userprofile.account_type
+    users = User.objects.all().select_related('userprofile')
+    print("🔁 All users:", [u.username for u in users])
     return render(request, 'user_management.html', {'form': form, 'users': users})
 
 def update_item(request, item_id):
@@ -611,6 +647,10 @@ def supplier_list_api(request):
     suppliers_list = list(suppliers)
     return JsonResponse(suppliers_list, safe=False)
 
+def supplier_list(request):
+    suppliers = Supplier.objects.all()
+    return render(request, 'supplier_list.html', {'suppliers': suppliers})
+
 
 def supplier_create(request):
     if request.method == 'POST':
@@ -655,149 +695,149 @@ def search_items(request):
     return JsonResponse(results, safe=False)
 
 
+
 def get_sales_by_period(period):
     today = now().date()
+
     if period == "today":
-        return Sale.objects.filter(date__date=today)
+        return Sale.objects.filter(date=today), "Today's Sales"
+
     elif period == "week":
-        return Sale.objects.filter(date__date__gte=today - timedelta(days=7))
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+        return Sale.objects.filter(date__range=(start_of_week, end_of_week)), "This Week's Sales"
+
     elif period == "month":
-        return Sale.objects.filter(date__month=today.month, date__year=today.year)
+        return Sale.objects.filter(date__month=today.month, date__year=today.year), "This Month's Sales"
+
     elif period == "year":
-        return Sale.objects.filter(date__year=today.year)
-    return Sale.objects.none()
+        return Sale.objects.filter(date__year=today.year), "This Year's Sales"
+
+    return Sale.objects.all(), "All Sales"
+
 
 def download_sales_report(request):
-    # Get today's date
-    today = datetime.now().date()
-
-    # Based on the period selected, filter sales
+    # Get period and format from request
     period = request.GET.get('period', 'today').lower()
+    file_format = request.GET.get('format', 'docx').lower()
 
-    if period == 'today':
-        sales = Sale.objects.filter(date=today)
-        period_display = "Today's Sales"
-    elif period == 'week':
-        start_of_week = today - timedelta(days=today.weekday())
-        sales = Sale.objects.filter(date__gte=start_of_week)
-        period_display = "This Week's Sales"
-    elif period == 'month':
-        sales = Sale.objects.filter(date__month=today.month, date__year=today.year)
-        period_display = "This Month's Sales"
-    elif period == 'year':
-        sales = Sale.objects.filter(date__year=today.year)
-        period_display = "This Year's Sales"
-    else:
-        sales = Sale.objects.all()
-        period_display = "All Sales"
+    # Filter sales and get label
+    sales, period_display = get_sales_by_period(period)
 
-    # Get the format (PDF or DOCX) from the GET request
-    file_format = request.GET.get('format', 'docx')
-
-    # If user requests DOCX (Word document)
     if file_format == 'docx':
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-        response['Content-Disposition'] = f'attachment; filename="{period_display}.docx"'
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        response['Content-Disposition'] = f'attachment; filename="SST_Inventory_{period_display}.docx"'
 
-        # Create a new Document
         doc = Document()
-
-        # Add the title and total sales header
-        doc.add_heading(f"{period_display} Report", 0)
+        doc.add_heading("SST Inventory Management", 0)
+        doc.add_heading(f"{period_display} Report", level=1)
 
         total_sales = 0
         doc.add_paragraph(f"Total Sales: ₱{total_sales:.2f}")
 
-        # Add table headers
-        table = doc.add_table(rows=1, cols=5)
+        table = doc.add_table(rows=1, cols=3)
         table.style = 'Table Grid'
         hdr_cells = table.rows[0].cells
         hdr_cells[0].text = 'Date'
-        hdr_cells[1].text = 'Item Name'
-        hdr_cells[2].text = 'Price Per Item'
-        hdr_cells[3].text = 'Quantity Sold'
-        hdr_cells[4].text = 'Subtotal'
+        hdr_cells[1].text = 'Time'
+        hdr_cells[2].text = 'Subtotal'
 
-        # Add sale data to the table
         for sale in sales:
-            for sale_item in sale.items.all():
-                item_name = sale_item.item.name
-                item_price = sale_item.price
-                item_quantity = sale_item.quantity
-                item_subtotal = sale_item.subtotal
-                total_sales += item_subtotal
+            row_cells = table.add_row().cells
+            row_cells[0].text = str(sale.date)
+            row_cells[1].text = sale.timestamp.strftime("%H:%M:%S")
+            row_cells[2].text = f"₱{sale.subtotal:.2f}"
+            total_sales += sale.subtotal
 
-                row_cells = table.add_row().cells
-                row_cells[0].text = str(sale.date)
-                row_cells[1].text = item_name
-                row_cells[2].text = f"₱{item_price:.2f}"
-                row_cells[3].text = str(item_quantity)
-                row_cells[4].text = f"₱{item_subtotal:.2f}"
-
-        # Add total sales at the end
         doc.add_paragraph(f"\nTotal Sales: ₱{total_sales:.2f}")
-
-        # Save the document to the response
         doc.save(response)
-
         return response
 
-    # If user requests PDF
+
     elif file_format == 'pdf':
         response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{period_display}.pdf"'
+        response['Content-Disposition'] = f'attachment; filename="SST_Sales_Report_{period_display}.pdf"'
 
-        # Create a PDF canvas
         p = canvas.Canvas(response, pagesize=letter)
+        width, height = letter
 
-        # Add title
-        p.setFont("Helvetica", 14)
-        p.drawString(100, 750, f"{period_display} Report")
+        # Logo
+        logo_path = os.path.join(settings.BASE_DIR, 'core', 'static', 'images', 'samsantek-image1.png')
+        try:
+            p.drawImage(logo_path, 50, height - 80, width=60, height=60)
+        except:
+            p.setFont("Helvetica", 10)
+            p.drawString(50, height - 20, "[Logo not found]")
 
-        # Add total sales header
+        # Title and Subheading
+        p.setFont("Helvetica-Bold", 18)
+        p.drawCentredString(width / 2, height - 50, "SST Inventory Management System")
+
+        p.setFont("Helvetica", 12)
+        p.drawCentredString(width / 2, height - 70, f"Sales Report for {period_display}")
+
+        # Line separator
+        p.setStrokeColor(colors.black)
+        p.line(50, height - 90, width - 50, height - 90)
+
+        y = height - 110
+
+        # Table headers
+        p.setFont("Helvetica-Bold", 11)
+        p.setFillColor(colors.lightblue)
+        p.rect(50, y - 5, width - 100, 20, fill=1, stroke=0)
+        p.setFillColor(colors.black)
+        p.drawString(60, y, "Date")
+        p.drawString(180, y, "Time")
+        p.drawString(300, y, "Subtotal (₱)")
+
+        y -= 30
         total_sales = 0
-        p.setFont("Helvetica", 10)
-        p.drawString(100, 730, f"Total Sales: ₱{total_sales:.2f}")
 
-        # Set table headers
-        p.setFont("Helvetica-Bold", 10)
-        p.drawString(100, 710, "Date")
-        p.drawString(200, 710, "Item Name")
-        p.drawString(300, 710, "Price Per Item")
-        p.drawString(400, 710, "Quantity Sold")
-        p.drawString(500, 710, "Subtotal")
+        for i, sale in enumerate(sales):
+            if y < 100:
+                # New page
+                p.showPage()
+                y = height - 50
+                p.setFont("Helvetica-Bold", 11)
+                p.drawString(60, y, "Date")
+                p.drawString(180, y, "Time")
+                p.drawString(300, y, "Subtotal (₱)")
+                y -= 20
 
-        # Add sale data to the table
-        y_position = 690
-        for sale in sales:
-            for sale_item in sale.items.all():
-                item_name = sale_item.item.name
-                item_price = sale_item.price
-                item_quantity = sale_item.quantity
-                item_subtotal = sale_item.subtotal
-                total_sales += item_subtotal
+            # Alternate row colors
+            bg_color = colors.whitesmoke if i % 2 == 0 else colors.lightgrey
+            p.setFillColor(bg_color)
+            p.rect(50, y - 5, width - 100, 20, fill=1, stroke=0)
 
-                p.setFont("Helvetica", 10)
-                p.drawString(100, y_position, str(sale.date))
-                p.drawString(200, y_position, item_name)
-                p.drawString(300, y_position, f"₱{item_price:.2f}")
-                p.drawString(400, y_position, str(item_quantity))
-                p.drawString(500, y_position, f"₱{item_subtotal:.2f}")
+            # Sale data
+            p.setFillColor(colors.black)
+            p.setFont("Helvetica", 10)
+            p.drawString(60, y, str(sale.date))
+            p.drawString(180, y, sale.timestamp.strftime("%H:%M:%S"))
+            p.drawRightString(400, y, f"₱{sale.subtotal:.2f}")
 
-                y_position -= 20
+            total_sales += sale.subtotal
+            y -= 25
 
-        # Add total sales at the end
-        p.setFont("Helvetica-Bold", 10)
-        p.drawString(400, y_position - 20, f"Total Sales: ₱{total_sales:.2f}")
+        # Totals
+        p.setFont("Helvetica-Bold", 11)
+        p.drawString(60, y - 10, "Total Sales:")
+        p.drawRightString(400, y - 10, f"₱{total_sales:.2f}")
+
+        # Footer
+        p.setFont("Helvetica-Oblique", 8)
+        p.setFillColor(colors.darkgray)
+        p.drawString(50, 30, "Generated by SST Inventory Management System")
+        p.drawRightString(width - 50, 30, f"Page 1")
 
         p.showPage()
         p.save()
-
         return response
 
-    else:
-        return HttpResponse("Invalid format selected. Please choose 'docx' or 'pdf'.", status=400)
-    
+
 def stock_in(request, item_id):
     # Step 1: Get the item
     item = get_object_or_404(Item, id=item_id)
@@ -875,7 +915,6 @@ class DashboardStatsView(APIView):
     def get(self, request):
         # Fetch your stats here
         total_items = Item.objects.count()
-        # ✅ CORRECT
         total_sales = Sale.objects.aggregate(total=Sum('total_price'))['total']
         total_categories = Category.objects.count()
         total_users = User.objects.count()
@@ -888,3 +927,9 @@ class DashboardStatsView(APIView):
         }
         
         return Response(data, status=status.HTTP_200_OK)
+    
+@api_view(['GET'])
+def stock_log_api(request):
+    logs = StockTransaction.objects.select_related('item').order_by('-date')
+    serializer = StockTransactionSerializer(logs, many=True)
+    return Response(serializer.data)

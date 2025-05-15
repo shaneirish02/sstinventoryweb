@@ -8,17 +8,20 @@ from django.utils import timezone
 def some_function():
     from .models import Item
 
-# Model for UserProfile
+
+
 class UserProfile(models.Model):
     ACCOUNT_TYPES = (
-        ('Admin', 'admin'),
-        ('Cashier', 'cashier'),
+        ('admin', 'Admin'),
+        ('cashier', 'Cashier'),
     )
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     account_type = models.CharField(max_length=10, choices=ACCOUNT_TYPES)
 
     def __str__(self):
         return f"{self.user.username} ({self.account_type})"
+
 
 
 # Model for Category
@@ -72,26 +75,41 @@ class Item(models.Model):
         return self.name
 
 
-    
-    
 # Model for Sale
 class Sale(models.Model):
     date = models.DateField()
+    timestamp = models.DateTimeField(default=timezone.now)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
         return f"Sale on {self.date} for ₱{self.total_price}"
 
+    @property
+    def subtotal(self):
+        # Sum all related sale items' subtotals
+        return sum(item.subtotal for item in self.items.all())
+    
+    
 # Model for SaleItem
 class SaleItem(models.Model):
-    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='items')
-    item = models.ForeignKey('Item', on_delete=models.SET_NULL, null=True)  # Use string reference for ForeignKey
+    sale = models.ForeignKey('core.Sale', on_delete=models.CASCADE, related_name='items')
+    item = models.ForeignKey('Item', on_delete=models.SET_NULL, null=True)
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
-    def __str__(self):
-        return f"{self.item.name} x {self.quantity}"
+def save(self, *args, **kwargs):
+    # Calculate the subtotal
+    self.subtotal = self.quantity * self.price
+    super(SaleItem, self).save(*args, **kwargs)
+
+    # Now that the SaleItem is saved, update the parent sale's total_price
+    if self.sale:
+        total = sum(item.subtotal for item in self.sale.items.all())
+        self.sale.total_price = total
+        self.sale.save(update_fields=['total_price'])
+
+    
 
 
 def cashier_pos(request):
@@ -180,7 +198,9 @@ def sales_report(request):
         'total_sales': total_sales,
         'selected_period': period
     })
-
+    
+    
+    
 class CartItem(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)

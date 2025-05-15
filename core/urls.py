@@ -9,11 +9,12 @@ from .views import user_info
 from .views import category_list_api
 from .views import DashboardStatsView
 from .views import supplier_list_api
+from .views import stock_log_api
 
 urlpatterns = [
     # Regular views
     path('', views.homepage, name='homepage'),
-    path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin_view/', views.admin_dashboard, name='admin_dashboard'),
     path('cashier_pos/', views.cashier_pos, name='cashier_pos'),
     path('login/', views.user_login, name='user_login'),
     path('inventory_management/', views.inventory_management, name='inventory_management'),
@@ -33,7 +34,7 @@ urlpatterns = [
     path('record_sale/', views.record_sale, name='record_sale'),
     path('clear_cart/', views.clear_cart, name='clear_cart'),
     path('remove_from_cart/', views.remove_from_cart, name='remove_from_cart'),
-    path('api/suppliers/', supplier_list_api, name='supplier_list_api'),
+    path('suppliers/', views.supplier_list, name='supplier_list'),
     path('suppliers/create/', views.supplier_create, name='supplier_create'),
     path('suppliers/<int:pk>/', views.supplier_detail, name='supplier_detail'),
     path('suppliers/<int:pk>/edit/', views.supplier_update, name='supplier_update'),
@@ -41,6 +42,9 @@ urlpatterns = [
     path('stock_card/<int:item_id>/', views.stock_card, name='stock_card'),
     path('search_items/', views.search_items, name='search_items'),
     path('download-sales-report/', views.download_sales_report, name='download_sales_report'),
+    path('stock-log/', views.stock_log, name='stock_log'),
+
+
 
     # API views
     path('api/login/', LoginView.as_view(), name='api-login'),  # API login
@@ -49,6 +53,8 @@ urlpatterns = [
     path('api/sales-report/', views.sales_report_api, name='sales_report_api'),
     path('api/inventory/', views.inventory_api, name='inventory_api'),
     path('api/categories/', category_list_api, name='category-list-api'),
+    path('api/suppliers/', supplier_list_api, name='supplier_list_api'),
+      path('api/stock-log/', stock_log_api, name='stock_log_api'),
     
     # Dashboard Stats API - Fix the URL here
     path('api/dashboard/', DashboardStatsView.as_view(), name='dashboard-stats'),  # Use .as_view() for class-based view

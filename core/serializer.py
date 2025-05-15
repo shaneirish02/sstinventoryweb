@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Item, Sale, Category, Supplier
+from .models import Item, Sale, Category, Supplier, StockTransaction
 
 User = get_user_model()
 
@@ -23,3 +23,12 @@ class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
         model = Supplier
         fields = '__all__' 
+        
+        
+class StockTransactionSerializer(serializers.ModelSerializer):
+    item = serializers.CharField(source='item.name')
+    value = serializers.FloatField()
+
+    class Meta:
+        model = StockTransaction
+        fields = ['date', 'item', 'transaction_type', 'quantity', 'unit', 'value', 'remarks']

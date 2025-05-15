@@ -293,7 +293,7 @@ input[type="submit"], button {
         height: 52px;
         padding: 2px 0;
         margin: auto 15px;
-        border-radius: 20px;
+        border-style: outset;: 20px;
         transform: translateY(-10px);
     }
 
@@ -742,7 +742,7 @@ input[type="submit"], button {
 
     .inline-group[data-inline-type="stacked"] .inline-related {
         border: 1px solid var(--hairline-color);
-        border-radius: 4px;
+        border-style: outset;: 4px;
         margin-top: 15px;
         overflow: auto;
     }
@@ -794,7 +794,7 @@ input[type="submit"], button {
     .inline-group[data-inline-type="stacked"] div.add-row {
         margin-top: 15px;
         border: 1px solid var(--hairline-color);
-        border-radius: 4px;
+        border-style: outset;: 4px;
     }
 
     .inline-group div.add-row,
@@ -938,12 +938,12 @@ input[type="submit"], button {
     }
 
     .calendarbox .calendar, .clockbox h2 {
-        border-radius: 4px 4px 0 0;
+        border-style: outset;: 4px 4px 0 0;
         overflow: hidden;
     }
 
     .calendarbox .calendar-cancel, .clockbox .calendar-cancel {
-        border-radius: 0 0 4px 4px;
+        border-style: outset;: 0 0 4px 4px;
         overflow: hidden;
     }
 

@@ -6,40 +6,49 @@
 
     <!-- Dashboard Overview Section -->
     <section class="section-card">
-       
         <div class="stats-grid">
-            
-            <!-- Total Items -->
+            <!-- Stat cards -->
             <a href="{% url 'inventory_management' %}" class="stat-card gradient-purple">
                 <div class="stat-icon"><i class="fas fa-box"></i></div>
                 <h4>Total Items</h4>
                 <p>{{ total_items }}</p>
             </a>
-
-            <!-- Total Sales -->
             <a href="{% url 'sales_report' %}" class="stat-card gradient-green">
                 <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
                 <h4>Total Sales</h4>
                 <p>${{ total_sales }}</p>
             </a>
-
-            <!-- Total Categories -->
             <a href="{% url 'category_management' %}" class="stat-card gradient-orange">
                 <div class="stat-icon"><i class="fas fa-tags"></i></div>
                 <h4>Total Categories</h4>
                 <p>{{ total_categories }}</p>
             </a>
-
-            <!-- Total Users -->
             <a href="{% url 'user_management' %}" class="stat-card gradient-lime">
                 <div class="stat-icon"><i class="fas fa-users"></i></div>
                 <h4>Total Users</h4>
                 <p>{{ total_users }}</p>
             </a>
+        </div>
 
+        <!-- Top Selling Items (separated from stat grid!) -->
+        <h3 class="section-title">Top 3 Selling Items</h3>
+        <div class="top-selling-list">
+            {% for item in top_selling_items %}
+                <div class="top-item">
+                    <img src="{{ item.item__image.url }}">
+                    <div class="item-name">{{ item.item__name }}</div>
+                    <div class="item-qty">
+                        {{ item.total_quantity }}
+                        <span class="item-unit">sold</span>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No sales data available.</p>
+            {% endfor %}
         </div>
     </section>
 </div>
+
 
 <!-- Font Awesome CDN for Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -62,12 +71,12 @@
 
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
         gap: 24px;
     }
 
     .stat-card {
-        border-radius: 20px;
+        border-style: outset;
         color: #fff;
         padding: 24px;
         display: flex;
@@ -101,6 +110,71 @@
     .gradient-lime {
         background: linear-gradient(135deg, #76ff03, #b2ff59);
     }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 40px 0 20px;
+        text-align: center;
+    }
+    
+    .top-selling-list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        background-color:rgb(147, 170, 214);
+        border-style: outset;
+        padding: 30px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        margin: 0 auto;
+        width: 100%;
+    }
+    
+    .top-item {
+        width: 180px;
+        background: #fff;
+        border: 1px solid #eee;
+        border-style: outset;
+        padding: 20px 15px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .top-item:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .top-item img {
+        height: 100px;
+        width: auto;
+        object-fit: contain;
+        margin-bottom: 15px;
+    }
+    
+    .item-name {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .item-qty {
+        font-size: 1.4rem;
+        font-weight: bold;
+        color: #222;
+    }
+    
+    .item-unit {
+        font-size: 0.8rem;
+        color: #777;
+        margin-left: 5px;
+    }
+    
 
     @media (max-width: 600px) {
         .dashboard-title {

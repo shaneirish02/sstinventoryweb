@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>SST INVENTORY SYSTEM</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'images/samsantek-favicon.ico' %}">
 
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -15,17 +16,27 @@
             margin: 0;
             font-family: 'Poppins', sans-serif;
             min-height: 100vh;
-            background: linear-gradient(to bottom right, #4158d0, #c850c0, #ffcc70);
+            background: #4e73df;
             background-size: cover;
             display: flex;
             justify-content: center;
             align-items: center;
+            flex-direction: column;
+        }
+
+        .logo-container {
+            text-align: center;
+        }
+
+        .logo-container img {
+            width: 250px;
+            border-radius: 10%;
         }
 
         .login-box {
             background: rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(12px);
-            border-radius: 16px;
+            border-style: outset;
             width: 360px;
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
             text-align: center;
@@ -33,7 +44,7 @@
         }
 
         .login-box-header {
-            background: linear-gradient(135deg, #4158d0, #c850c0, #ffcc70);
+            background: linear-gradient(135deg, #2E5EAA, #7FC8A9, #EAF1FB);
             padding: 20px;
             color: #fff;
             font-size: 22px;
@@ -61,7 +72,7 @@
             width: 100%;
             padding: 10px 12px 10px 38px;
             border: none;
-            border-radius: 8px;
+            border-style: outset;
             background: rgba(255, 255, 255, 0.9);
             font-size: 14px;
             color: #333;
@@ -69,7 +80,7 @@
         }
 
         .form-group input:focus {
-            outline: 2px solid #c850c0;
+            outline: 2px solid #2E5EAA;
             background-color: #fff;
         }
 
@@ -88,19 +99,19 @@
         .login-btn {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #4158d0, #c850c0, #ffcc70);
+            background: linear-gradient(135deg, #2E5EAA, #7FC8A9, #EAF1FB);
             border: none;
             color: #fff;
             font-size: 16px;
             font-weight: 600;
-            border-radius: 8px;
+            border-style: outset;
             cursor: pointer;
             transition: transform 0.2s;
         }
 
         .login-btn:hover {
             transform: translateY(-2px);
-            background: linear-gradient(135deg, #3d4db5, #b63aa6, #f6c149);
+            background: linear-gradient(135deg, #2E5EAA, #7FC8A9, #EAF1FB);
         }
 
         .error {
@@ -119,6 +130,12 @@
 </head>
 <body>
 
+    <!-- Logo Outside the Login Box -->
+    <div class="logo-container">
+        <img src="{% static 'images/samsantek-image.png' %}" alt="SST Logo">
+    </div>
+
+    <!-- Login Box -->
     <div class="login-box">
         <div class="login-box-header">SST Inventory POS</div>
         <form method="post">

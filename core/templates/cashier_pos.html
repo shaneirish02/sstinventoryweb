@@ -1,471 +1,446 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cashier POS</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    {% load static %}
-    <meta name="csrf-token" content="{{ csrf_token }}">
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cashier Dashboard</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+  {% load static %}
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <style>
+    /* Reset & General */
+    * { 
+        box-sizing: 
+        border-box; 
+        margin: 0; 
+        padding: 0; 
+        font-family: Arial, sans-serif; 
+    }
+    body {
+      background: #2c2c2c;
+      display: flex; 
+      justify-content: center;
+      align-items: center;
+      height: 100vh; 
+      overflow: hidden; 
+      font-size: 16px;
+    }
 
-        body {
-            background: #2c2c2c;
-            margin: 0;
-            padding: 0;
-            font-size: 16px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;  /* Prevent scrolling */
-        }
+    .container {
+      width: 100%; 
+      height: 100%;
+      background: linear-gradient(135deg, #2E5EAA, #7FC8A9, #EAF1FB);
+      color: white; 
+      border: 2px solid #333;
+      display: flex; 
+      flex-direction: column;
+    }
 
-        .container {
-            width: 100%;
-            height: 100%;
-            background: #0e2d55;
-            color: white;
-            border: 2px solid #333;
-            display: flex;
-            flex-direction: column;
-        }
+    .header {
+      padding: 20px; 
+      display: flex;
+      justify-content: 
+      space-between;
+      font-weight: bold; 
+      font-size: 2rem;
+    }
 
-        .header {
-            background: #f5c150;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            font-weight: bold;
-            font-size: 1.5rem;
-        }
+    .main {
+      padding: 15px; 
+      flex-grow: 1;
+      display: flex; 
+      flex-direction: column;
+      justify-content: space-between; 
+      overflow-y: auto;
+    }
 
-        .main {
-            padding: 20px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            overflow-y: auto;
-        }
+    .cart-header {
+      display: flex; justify-content: space-between;
+      margin-bottom: 20px; font-size: 1.2rem;
+    }
 
-        .cart-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            font-size: 1.2rem;
-        }
+    .cart-table {
+      background: #eee; 
+      padding: 15px;
+      border-style: outset;
+      flex-grow: 1;
+      overflow-y: auto; 
+      max-height: 60vh;
+    }
 
-        .cart-table {
-            background: #eee;
-            padding: 15px;
-            border-radius: 8px;
-            flex-grow: 1;
-            overflow-y: auto;
-            max-height: 60vh; 
-        }
-        
+    .cart-row, .header-row {
+      display: flex; 
+      justify-content: space-between;
+      padding: 15px 0;
+    }
 
-        .cart-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 15px 0;
-        }
+    .header-row {
+      background: #7FC8A9; 
+      color: white;
+      font-weight: bold; 
+      padding: 15px;
+    }
 
-        .header-row {
-            background: #0e2d55;
-            display: flex;
-            justify-content: space-between;
-            color: white;
-            font-weight: bold;
-            text-align: center;
-            padding: 15px;
-        }
+    .cart-row > div, .header-row > div {
+      flex: 1; 
+      padding: 10px; 
+      text-align: center;
+      color: black;
+    }
 
-        .cart-row > div {
-            flex: 1;
-            padding: 10px;
-            color: black;
-            text-align: center;
-        }
+    .bottom-section {
+      display: flex; 
+      margin-top: 20px;
+      gap: 20px; 
+      justify-content: space-between;
+    }
 
-        .bottom-section {
-            display: flex;
-            margin-top: 20px;
-            gap: 20px;
-            justify-content: space-between;
-        }
+    .left-form, .right-status {
+      background: white; 
+      color: black;
+      flex: 1; padding: 20px;
+      border-style: outset;
+      height: 30vh;
+      overflow-y: auto;
+    }
 
-        .left-form,
-        .right-status {
-            background: white;
-            color: black;
-            flex: 1;
-            padding: 20px;
-            border-radius: 8px;
-            height: 30vh;
-            overflow-y: auto;
-        }
+    .left-form { flex: 1.5; }
 
-        .left-form {
-            flex: 1.5;
-        }
-        .right-status {
-            flex: 1; 
-        }
+    .form-group, .form-group-qty {
+      margin-bottom: 20px;
+    }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+    .form-group input, .form-group-qty input {
+      width: 100%; 
+      padding: 12px;
+      font-size: 16px; 
+      border-style: outset;
+      border: 1px solid #ccc;
+    }
 
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }
-        .form-group-qty input {
-            width: 50%;
-            padding: 12px;
-            font-size: 16px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }
+    .form-group-qty input {
+        width: 60%; 
+        padding: 12px;
+        font-size: 16px; 
+        border-style: outset;
+        border: 1px solid #ccc;
+      
+    }
 
-        .buttons {
-            display: flex;
-            gap: 20px;
-            justify-content: flex-end;
-            margin-top: -45px; 
-        }
+    .buttons {
+      display: flex; gap: 20px;
+      justify-content: flex-end; margin-top: -45px;
+    }
 
-        .add,
-        .checkout {
-            padding: 15px 30px;
-            font-size: 1.1rem;
-            border-radius: 8px;
-            cursor: pointer;
-        }
+    .add, .checkout {
+      padding: 15px 30px; 
+      font-size: 1.1rem;
+      border-style: outset;
+      cursor: pointer;
+      color: white;
+    }
 
-        .add {
-            background: #0e2d55;
-            color: white;
-            border: none;
-        }
+    .add { background: #0e2d55; }
+    .checkout { background: #00c853; }
 
-        .checkout {
-            background: #00c853;
-            color: white;
-            border: none;
-        }
+    .payment-section {
+      display: none;
+      background: #fff; 
+      padding: 30px;
+      position: absolute; 
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%; 
+      max-width: 400px;
+      text-align: center; 
+      border-style: outset;
+      border: 1px solid #333;
+    }
 
-        .payment-section {
-            display: none;
-            background: #fff;
-            padding: 30px;
-            border: 1px solid #333;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80%;
-            max-width: 400px;
-            text-align: center;
-            border-radius: 10px;
-        }
+    .payment-section input {
+      padding: 10px; 
+      margin-top: 20px;
+      width: 80%; 
+      font-size: 18px;
+      border-style: outset;
+      border: 1px solid #ccc;
+    }
 
-        .payment-section input {
-            padding: 10px;
-            margin-top: 20px;
-            width: 80%;
-            font-size: 18px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }
+    .payment-section button {
+      background: #00c853; 
+      color: white;
+      padding: 15px 30px;
+      margin-top: 20px;
+      font-size: 18px;
+      border-style: outset;
+      border: none; 
+      cursor: pointer;
+    }
 
-        .payment-section button {
-            background: #00c853;
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            cursor: pointer;
-            margin-top: 20px;
-            font-size: 18px;
-            border-radius: 8px;
-        }
+    .receipt-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+      }
+      
+      .receipt-content {
+        background: #fff;
+        padding: 25px 30px;
+        border-style: outset;
+        width: 400px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        color: #000;
+      }
 
-    </style>
+    
+  </style>
 </head>
 <body>
-    <div class="container">
-      <header class="header">
-        <span class="title-left">SST INVENTORY SYSTEM POS</span>
-        <span class="title-right">CASHIER DASHBOARD</span>
+  <div class="container">
+    <header class="header">
+        <span class="title-right">POS System - Cart View</span>
+        <form action="{% url 'logout' %}" method="post">
+          {% csrf_token %}
+          <button type="submit" style="padding: 10px 20px; font-size: 1rem; background: #ff4d4d; color: white; border: none; cursor: pointer; border-radius: 5px;">
+            Logout
+          </button>
+        </form>
       </header>
-  
-      <section class="main">
-        <div class="cart-header">
-          <h2>POS System - Cart View</h2>
-          <div class="total">Total Amount Due : ₱<span id="total-amount">0.00</span></div>
-        </div>
-  
-        <div class="cart-table">
-          <div class="header-row">
-            <div>Item Name</div>
-            <div>Quantity</div>
-            <div>Price</div>
-            <div>Subtotal</div>
-            <div>Action</div>
-          </div>
-          <div class="cart-body" id="cart-table">
-            <!-- dynamic rows will go here -->
-          </div>
-        </div>
-  
-        <div class="bottom-section">
-          <div class="left-form">
-            <div class="form-group">
-              <input type="text" id="item-name" placeholder="Item Name">
-            </div>
-            <div class="form-group-qty">
-              <input type="number" id="quantity" min="1" placeholder="Quantity">
-            </div>
-            <div class="buttons">
-              <button class="add" onclick="addToCart()">Add to Cart</button>
-              <button class="checkout" onclick="showPaymentSection()">Checkout</button>
-            </div>
-          </div>
-          <div class="right-status">
-            No Item Found
-          </div>
-        </div>
-      </section>
-    </div>
+      
 
-    <!-- Payment Section -->
-    <div class="payment-section" id="payment-section">
-        <h3>Payment</h3>
-        <p>Total: ₱<span id="payment-total">0.00</span></p>
-        <input type="number" id="payment-input" placeholder="Enter payment amount" min="0">
-        <div class="info">
-            <p>Amount Due: ₱<span id="payment-due">0.00</span></p>
-            <p class="change-info" id="change-info" style="display:none;">Change: ₱<span id="change-amount">0.00</span></p>
-        </div>
-        <button onclick="processPayment()">Confirm Payment</button>
-    </div>
+    <section class="main">
+      <div class="cart-header">
+        <div class="total">Total Amount Due : ₱<span id="total-amount">0.00</span></div>
+      </div>
 
-<script>
+      <div class="cart-table">
+        <div class="header-row">
+          <div>Item Name</div><div>Quantity</div><div>Price</div><div>Subtotal</div><div>Action</div>
+        </div>
+        <div class="cart-body" id="cart-table"></div>
+      </div>
+
+      <div class="bottom-section">
+        <div class="left-form">
+          <div class="form-group"><input type="text" id="item-name" placeholder="Item Name" /></div>
+          <div class="form-group-qty"><input type="number" id="quantity" min="1" placeholder="Quantity" /></div>
+          <div class="buttons">
+            <button class="add" onclick="addToCart()">Add to Cart</button>
+            <button class="checkout" onclick="showPaymentSection()">Checkout</button>
+          </div>
+        </div>
+        <div class="right-status">No Item Found</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Payment Section -->
+  <div class="payment-section" id="payment-section">
+    <h3>Payment</h3>
+    <p>Total: ₱<span id="payment-total">0.00</span></p>
+    <input type="number" id="payment-input" placeholder="Enter payment amount" min="0">
+    <div class="info">
+      <p>Amount Due: ₱<span id="payment-due">0.00</span></p>
+      <p class="change-info" id="change-info" style="display:none;">Change: ₱<span id="change-amount">0.00</span></p>
+    </div>
+    <button onclick="processPayment()">Confirm Payment</button>
+  </div>
+
+
+  <!-- Receipt Modal -->
+    <div id="receipt-modal" class="receipt-modal" style="display:none;">
+        <div class="receipt-content">
+        <h2 style="text-align:center;">SST Inventory Management</h2>
+        <p style="text-align:center;">Ustp Cagayan de Oro, College of Information Technology, 3rd Floor</p>
+        <hr>
+        <p><strong>Date & Time:</strong> <span id="receipt-time"></span></p>
+        <p><strong>Transaction #:</strong> <span id="receipt-number"></span></p>
+        <table style="width:100%; margin-top:10px; text-align:left; font-size:14px;">
+            <thead>
+            <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Subtotal</th>
+            </tr>
+            </thead>
+            <tbody id="receipt-items"></tbody>
+        </table>
+        <hr>
+        <p><strong>Total Amount:</strong> ₱<span id="receipt-total"></span></p>
+        <p><strong>Cash Received:</strong> ₱<span id="receipt-cash"></span></p>
+        <p><strong>Change Given:</strong> ₱<span id="receipt-change"></span></p>
+        <p style="text-align:center; margin-top: 20px;">Thank you for your purchase!</p>
+        <button onclick="closeReceipt()">Close</button>
+        </div>
+    </div>
+    
+  
+  
+</div>
+
+  <script>
     let cart = [];
 
     function getCSRFToken() {
-        return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     }
 
     function addToCart() {
-    const itemName = document.getElementById('item-name').value.trim();
-    const quantity = parseInt(document.getElementById('quantity').value, 10);
+      const itemName = document.getElementById('item-name').value.trim();
+      const quantity = parseInt(document.getElementById('quantity').value, 10);
+      if (!itemName || quantity <= 0) return alert("Enter valid item name and quantity");
 
-    if (!itemName || quantity <= 0) {
-        alert("Please enter valid item name and quantity");
-        return;
+      fetch('/add_to_cart/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({ item_name: itemName, quantity })
+      })
+      .then(res => res.json())
+      .then(data => data.success ? updateCart(data.cart) : alert(data.message || 'Error'))
+      .catch(err => alert('Error adding item'));
     }
 
-    const data = { item_name: itemName, quantity: quantity };
-
-    fetch('/add_to_cart/', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken()
-        }
-    })
-    .then(response => response.json())
-    .then(responseData => {
-        if (responseData.success) {
-            updateCart(responseData.cart);
-        } else {
-            alert(responseData.message || 'Error adding item to cart.');
-        }
-    })
-    .catch(error => {
-        alert('An error occurred while adding the item to the cart.');
-        console.error(error);
-    });
-}
-
-
     function updateCart(cartItems) {
-        cart = cartItems;
-        const cartTableBody = document.getElementById('cart-table');
-        cartTableBody.innerHTML = '';
+      cart = cartItems;
+      const cartTable = document.getElementById('cart-table');
+      cartTable.innerHTML = '';
+      let total = 0;
 
-        let totalAmount = 0;
-        cartItems.forEach(item => {
-            const row = document.createElement('div');
-            row.classList.add('cart-row');
-            row.innerHTML = `
-                <div>${item.name}</div>
-                <div><input type="number" value="${item.quantity}" min="1" onchange="updateQuantity(${item.id}, this.value)"></div>
-                <div>₱${item.price}</div>
-                <div>₱${(item.price * item.quantity).toFixed(2)}</div>
-                <div><button class="delete-btn" onclick="removeFromCart(${item.id})">Delete</button></div>
-            `;
-            cartTableBody.appendChild(row);
-            totalAmount += item.price * item.quantity;
-        });
+      cartItems.forEach(item => {
+        const row = document.createElement('div');
+        row.classList.add('cart-row');
+        row.innerHTML = `
+          <div>${item.name}</div>
+          <div><input type="number" value="${item.quantity}" min="1" onchange="updateQuantity(${item.id}, this.value)"></div>
+          <div>₱${item.price}</div>
+          <div>₱${(item.price * item.quantity).toFixed(2)}</div>
+          <div><button onclick="removeFromCart(${item.id})">Delete</button></div>
+        `;
+        cartTable.appendChild(row);
+        total += item.price * item.quantity;
+      });
 
-        document.getElementById('total-amount').textContent = `₱${totalAmount.toFixed(2)}`;
+      document.getElementById('total-amount').textContent = total.toFixed(2);
     }
 
     function showPaymentSection() {
-        // Ensure the cart is not empty before proceeding
-        if (cart.length === 0) {
-            alert('Your cart is empty. Please add items before proceeding to payment.');
-            return;
-        }
-
-        // Ensure stock check before proceeding with checkout
-        if (cart.some(item => item.quantity > item.stock)) {
-            alert('One or more items in your cart have insufficient stock.');
-            return;
-        }
-
-        const totalAmount = parseFloat(document.getElementById("total-amount").textContent.replace(/[₱,]/g, ''));
-        document.getElementById("payment-total").textContent = totalAmount.toFixed(2);
-        document.getElementById("payment-due").textContent = totalAmount.toFixed(2);
-        document.getElementById('payment-section').style.display = 'block';
+      if (cart.length === 0) return alert('Cart is empty');
+      const total = parseFloat(document.getElementById('total-amount').textContent);
+      document.getElementById('payment-total').textContent = total.toFixed(2);
+      document.getElementById('payment-due').textContent = total.toFixed(2);
+      document.getElementById('payment-section').style.display = 'block';
     }
-
 
     function processPayment() {
-        const totalAmount = parseFloat(document.getElementById("payment-total").textContent);
-        const paymentReceived = parseFloat(document.getElementById("payment-input").value);
-
-        if (isNaN(paymentReceived) || paymentReceived < totalAmount) {
-            alert("Invalid or insufficient payment.");
-            return;
-        }
-
-        const changeAmount = paymentReceived - totalAmount;
+        const total = parseFloat(document.getElementById('payment-total').textContent);
+        const payment = parseFloat(document.getElementById('payment-input').value);
+        if (isNaN(payment) || payment < total) return alert("Insufficient payment.");
+      
+        const change = payment - total;
         document.getElementById('change-info').style.display = 'block';
-        document.getElementById('change-amount').textContent = changeAmount.toFixed(2);
-
-        // Make sure stock is still available before checkout
+        document.getElementById('change-amount').textContent = change.toFixed(2);
+      
+        // 🔐 Save cart before clearing it
+        const cartSnapshot = [...cart];
+      
         fetch("/checkout/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCSRFToken()
-            },
-            body: JSON.stringify({ 
-                payment_received: paymentReceived,
-                cart: cart
-            })
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken()
+          },
+          body: JSON.stringify({ payment_received: payment, cart })
         })
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
-            if (data.success) {
-                alert(`${data.message}\nChange: ₱${changeAmount.toFixed(2)}\n${data.order_summary}`);
-                updateCart([]); 
-                document.getElementById('payment-section').style.display = 'none';
-            } else {
-                alert(data.message);
-            }
+          if (data.success) {
+            updateCart([]);  // this clears the cart
+            document.getElementById('payment-section').style.display = 'none';
+            showReceiptModal(total, payment, change, cartSnapshot);  // pass saved cart
+          } else {
+            alert(data.message);
+          }
         })
-        .catch(error => {
-            console.error("Checkout failed:", error);
-            alert("An error occurred during checkout.");
-        });
+        .catch(() => alert("Checkout error"));
+      }
+      
+
+    function showReceiptModal(total, cash, change, cartItems) {
+        // Set receipt data
+        document.getElementById('receipt-total').textContent = total.toFixed(2);
+        document.getElementById('receipt-cash').textContent = cash.toFixed(2);
+        document.getElementById('receipt-change').textContent = change.toFixed(2);
+        document.getElementById('receipt-time').textContent = new Date().toLocaleString();
+        document.getElementById('receipt-number').textContent = Math.floor(100000 + Math.random() * 900000); // Random 6-digit number
+      
+        // Populate item list
+        const tbody = document.getElementById('receipt-items');
+        tbody.innerHTML = '';
+        cartItems.forEach(item => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${item.name}</td>
+              <td>${item.quantity}</td>
+              <td>₱${item.price.toFixed(2)}</td>
+              <td>₱${(item.quantity * item.price).toFixed(2)}</td>
+            `;
+            tbody.appendChild(row);
+          });
+        document.getElementById('receipt-modal').style.display = 'flex';
+      }
+      
+
+    function closeReceipt() {
+      document.getElementById('receipt-modal').style.display = 'none';
     }
 
-    // Check stock for a specific item
-    function checkStock(itemName) {
-        return fetch(`/check_stock/?item_name=${encodeURIComponent(itemName)}`, {
-            headers: {
-                'X-CSRFToken': getCSRFToken()
-            }
-        })
-        .then(response => response.json())
-        .then(data => data.stock);
+    function removeFromCart(id) {
+      fetch('/remove_from_cart/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+        body: JSON.stringify({ item_id: id })
+      })
+      .then(res => res.json())
+      .then(data => data.success ? updateCart(data.cart) : alert(data.message))
+      .catch(() => alert("Error removing item"));
     }
 
-    function removeFromCart(itemId) {
-        fetch('/remove_from_cart/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
-            },
-            body: JSON.stringify({ item_id: itemId })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateCart(data.cart);
-            } else {
-                alert(data.message || 'Failed to remove item from cart.');
-            }
-        })
-        .catch(error => {
-            console.error("Error removing item:", error);
-            alert("An error occurred while removing the item.");
-        });
+    function updateQuantity(id, qty) {
+      const item = cart.find(i => i.id === id);
+      if (item) {
+        item.quantity = Math.max(1, parseInt(qty));
+        updateCart(cart);
+      }
     }
-
-    function updateQuantity(itemId, newQuantity) {
-        const item = cart.find(item => item.id === itemId);
-        if (item) {
-            item.quantity = Math.max(1, parseInt(newQuantity, 10)); // Prevent negative quantities
-            updateCart(cart);
-        }
-    }
-
 
     document.getElementById('item-name').addEventListener('input', function () {
-        const query = this.value.trim();
-    
-        if (query.length === 0) {
-            document.querySelector('.right-status').innerHTML = 'No Item Found';
-            return;
-        }
-    
-        fetch(`/search_items/?q=${encodeURIComponent(query)}`, {
-            headers: {
-                'X-CSRFToken': getCSRFToken()
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            const rightStatus = document.querySelector('.right-status');
-    
-            if (data.length === 0) {
-                rightStatus.innerHTML = 'No matching items found.';
-            } else {
-                rightStatus.innerHTML = data.map(item => `
-                    <div style="margin-bottom: 10px;">
-                        <strong>${item.name}</strong><br>
-                        Price: ₱${item.price}<br>
-                        Description: ${item.description}
-                    </div>
-                `).join('');
-            }
-        })
-        .catch(error => {
-            console.error('Search error:', error);
-            document.querySelector('.right-status').innerHTML = 'Error fetching results.';
-        });
+      const query = this.value.trim();
+      const status = document.querySelector('.right-status');
+
+      if (!query) return status.innerHTML = 'No Item Found';
+
+      fetch(`/search_items/?q=${encodeURIComponent(query)}`, {
+        headers: { 'X-CSRFToken': getCSRFToken() }
+      })
+      .then(res => res.json())
+      .then(data => {
+        status.innerHTML = data.length
+          ? data.map(i => `<div><strong>${i.name}</strong><br>Price: ₱${i.price}<br>Description: ${i.description}</div>`).join('<br>')
+          : 'No matching items found.';
+      })
+      .catch(() => status.innerHTML = 'Error fetching results.');
     });
-    
-
-</script>
-
+  </script>
 </body>
 </html>
