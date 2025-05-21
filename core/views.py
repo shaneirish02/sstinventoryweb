@@ -387,25 +387,28 @@ def cashier_pos(request):
     return render(request, 'cashier_pos.html')
 
 def category_management(request):
-    if request.method == 'POST' and 'category_name' in request.POST and 'edit_id' not in request.POST:
-        category_name = request.POST.get('category_name')
-        if category_name:
-            Category.objects.create(name=category_name)
-        return redirect('category_management')
+    if request.method == 'POST':
+        # Handle Add
+        if 'category_name' in request.POST and 'edit_id' not in request.POST and 'delete_id' not in request.POST:
+            category_name = request.POST.get('category_name')
+            if category_name:
+                Category.objects.create(name=category_name)
 
-    if request.method == 'POST' and 'edit_id' in request.POST:
-        category_id = request.POST.get('edit_id')
-        category_name = request.POST.get('category_name')
-        if category_name:
+        # Handle Edit
+        elif 'edit_id' in request.POST:
+            category_id = request.POST.get('edit_id')
+            category_name = request.POST.get('category_name')
+            if category_name:
+                category = get_object_or_404(Category, id=category_id)
+                category.name = category_name
+                category.save()
+
+        # Handle Delete
+        elif 'delete_id' in request.POST:
+            category_id = request.POST.get('delete_id')
             category = get_object_or_404(Category, id=category_id)
-            category.name = category_name
-            category.save()
-        return redirect('category_management')
+            category.delete()
 
-    if request.method == 'GET' and 'delete_id' in request.GET:
-        category_id = request.GET.get('delete_id')
-        category = get_object_or_404(Category, id=category_id)
-        category.delete()
         return redirect('category_management')
 
     categories = Category.objects.all()
@@ -420,20 +423,51 @@ def user_management(request):
     if request.method == 'POST':
         form = UserForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            account_type = form.cleaned_data['account_type']
+            user = form.save(commit=False)
+
+            raw_password = form.cleaned_data.get('password')
+            user.set_password(raw_password)
+
+            account_type_raw = form.cleaned_data['account_type']
+            account_type = account_type_raw.capitalize()  # Fix the capitalization (e.g., 'Admin', 'Cashier')
+
+            # Set staff/superuser flags if admin
+            if account_type == 'Admin':
+                user.is_staff = True  # appears in Django Admin
+                #user.is_superuser = True  # optional if you want full admin privileges
+
+            user.save()
+
+            # Save to UserProfile
             UserProfile.objects.create(user=user, account_type=account_type)
-            print("✅ New user created:", user.username)
-            print("✅ Account type:", account_type)
+
+            # Show proper success message
+            if account_type == 'Admin':
+                messages.success(request, 'Admin account created successfully!')
+            else:
+                messages.success(request, 'Cashier account created successfully!')
+
             return redirect('user_management')
         else:
-            print("❌ Form errors:", form.errors)
+            messages.error(request, 'Form has errors. Please check the inputs.')
     else:
         form = UserForm()
 
+    # Handle delete user
+    delete_id = request.GET.get('delete_id')
+    if delete_id:
+        try:
+            user_to_delete = User.objects.get(id=delete_id)
+            username = user_to_delete.username
+            user_to_delete.delete()
+            messages.success(request, f"User '{username}' deleted successfully.")
+            return redirect('user_management')
+        except User.DoesNotExist:
+            messages.error(request, "User not found.")
+
     users = User.objects.all().select_related('userprofile')
-    print("🔁 All users:", [u.username for u in users])
     return render(request, 'user_management.html', {'form': form, 'users': users})
+
 
 def update_item(request, item_id):
     item = get_object_or_404(Item, pk=item_id)

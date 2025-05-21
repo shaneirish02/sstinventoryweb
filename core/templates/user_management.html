@@ -3,6 +3,15 @@
 
 {% block content %}
 <div class="container">
+    <!-- Django messages -->
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <div class="content-wrapper">
         <!-- Left: User Management Form -->
         <div class="form-section">
@@ -21,6 +30,13 @@
                     <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
                     {{ form.password1 }}
                 </div>
+
+                <!-- Password Strength Bar -->
+                <div class="form-group">
+                    <label>Password Strength:</label>
+                    <div id="password-strength" style="height: 10px; border-radius: 4px; background-color: #ddd;"></div>
+                </div>
+
                 <div class="form-group">
                     <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
                     {{ form.password2 }}
@@ -77,9 +93,7 @@
     }
 
     .form-section, .user-list-section {
-     
         padding: 30px;
-        
     }
 
     .form-section {
@@ -106,7 +120,7 @@
     .form-group input, .form-group select {
         width: 100%;
         padding: 12px;
-        border-style: outset; outset;: 8px;
+        border-style: outset;
         border: 1px solid #ccc;
         font-size: 1rem;
     }
@@ -123,7 +137,6 @@
         width: 100%;
         padding: 14px;
         font-size: 1.1rem;
-        border-style: outset;: 10px;
         cursor: pointer;
         transition: 0.3s ease;
     }
@@ -159,7 +172,6 @@
         background-color: #e53935;
         color: white;
         padding: 8px 16px;
-        border-style: outset;
         text-decoration: none;
         font-weight: 500;
         transition: background-color 0.2s ease;
@@ -175,7 +187,29 @@
         font-style: italic;
     }
 
-    /* Make the layout stack on small screens (mobile first) */
+    /* Alert styles */
+    .messages {
+        margin-bottom: 20px;
+    }
+
+    .alert {
+        padding: 12px;
+        border-radius: 5px;
+        font-weight: 500;
+        margin-bottom: 10px;
+    }
+
+    .alert.success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .alert.error {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    /* Responsive layout */
     @media (max-width: 768px) {
         .content-wrapper {
             flex-direction: column;
@@ -183,9 +217,45 @@
 
         .form-section, .user-list-section {
             width: 100%;
-            margin-bottom: 20px; /* Space between the form and the table */
+            margin-bottom: 20px;
         }
     }
 </style>
 
+<script>
+    const passwordField = document.getElementById("id_password1");
+    const strengthBar = document.getElementById("password-strength");
+
+    if (passwordField && strengthBar) {
+        passwordField.addEventListener("input", function () {
+            const value = passwordField.value;
+            let strength = 0;
+
+            if (value.length >= 8) strength += 1;
+            if (/[A-Z]/.test(value)) strength += 1;
+            if (/[0-9]/.test(value)) strength += 1;
+            if (/[\W]/.test(value)) strength += 1;
+
+            switch (strength) {
+                case 0:
+                case 1:
+                    strengthBar.style.backgroundColor = "red";
+                    strengthBar.style.width = "25%";
+                    break;
+                case 2:
+                    strengthBar.style.backgroundColor = "orange";
+                    strengthBar.style.width = "50%";
+                    break;
+                case 3:
+                    strengthBar.style.backgroundColor = "yellowgreen";
+                    strengthBar.style.width = "75%";
+                    break;
+                case 4:
+                    strengthBar.style.backgroundColor = "green";
+                    strengthBar.style.width = "100%";
+                    break;
+            }
+        });
+    }
+</script>
 {% endblock %}

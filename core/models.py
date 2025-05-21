@@ -10,12 +10,12 @@ def some_function():
 
 
 
+# Model for UserProfile
 class UserProfile(models.Model):
     ACCOUNT_TYPES = (
-        ('admin', 'Admin'),
-        ('cashier', 'Cashier'),
+        ('Admin', 'admin'),
+        ('Cashier', 'cashier'),
     )
-
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     account_type = models.CharField(max_length=10, choices=ACCOUNT_TYPES)
 
