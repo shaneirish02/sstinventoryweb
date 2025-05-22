@@ -10,13 +10,15 @@ ACCOUNT_TYPES = (
     ('cashier', 'Cashier'),
 )
 
-
 class UserForm(UserCreationForm):
     account_type = forms.ChoiceField(choices=ACCOUNT_TYPES)
 
     class Meta:
         model = User
         fields = ['username', 'password1', 'password2', 'account_type']
+
+    def clean_account_type(self):
+        return self.cleaned_data['account_type'].capitalize()
 
 class ItemForm(forms.ModelForm):
     class Meta:

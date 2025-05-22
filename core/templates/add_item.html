@@ -3,6 +3,16 @@
 
 {% block content %}
 <section class="form-section">
+
+    <!-- Message block -->
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
     <h2 class="form-title">Add New Item</h2>
     <form method="POST" enctype="multipart/form-data" class="main-form" oninput="updatePreview()">
         {% csrf_token %}
@@ -184,6 +194,33 @@
         .form-section {
             flex-direction: column;
         }
+    }
+
+    /* Message styles */
+    .messages {
+        list-style: none;
+        padding: 10px;
+        margin-bottom: 20px;
+        width: 100%;
+    }
+
+    .messages li {
+        padding: 12px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        font-weight: bold;
+    }
+
+    .messages li.success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .messages li.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
     }
 </style>
 

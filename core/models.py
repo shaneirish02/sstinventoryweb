@@ -78,7 +78,7 @@ class Item(models.Model):
 # Model for Sale
 class Sale(models.Model):
     date = models.DateField()
-    timestamp = models.DateTimeField(default=timezone.now)
+    timestamp = models.DateTimeField(auto_now_add=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):

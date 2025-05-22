@@ -134,32 +134,31 @@ def user_login(request):
         username = request.POST['username']
         password = request.POST['password']
 
-     
+        # Authenticate the user
         user = authenticate(username=username, password=password)
 
         if user is not None:
-            login(request, user)  
+            login(request, user)
 
-           
-            if hasattr(user, 'userprofile'):
-               
-                print(f"Account type for {user.username}: {user.userprofile.account_type}") 
-                
-               
-                if user.userprofile.account_type == 'Admin':
-                    return redirect('admin_dashboard')  
+            # Check if the user has a UserProfile
+            try:
+                profile = user.userprofile
+            except UserProfile.DoesNotExist:
+                profile = None
+
+            if profile:
+                if profile.account_type == 'Admin':
+                    return redirect('admin_dashboard')  # Redirect to admin dashboard
                 else:
-                    return redirect('cashier_pos') 
+                    return redirect('cashier_pos')  # Redirect to cashier POS
             else:
-               
+                # If no profile exists, create one with 'Cashier' as default
                 UserProfile.objects.create(user=user, account_type='Cashier')
-                return redirect('cashier_pos')  
-
+                return redirect('cashier_pos')
         else:
-           
             return render(request, 'login.html', {'error': 'Invalid credentials'})
 
-    return render(request, 'login.html')  
+    return render(request, 'login.html')
 
 def homepage(request):
     return redirect('user_login')
@@ -423,30 +422,22 @@ def user_management(request):
     if request.method == 'POST':
         form = UserForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
+            user = form.save(commit=False)  # Don't commit yet
+            raw_password = form.cleaned_data['password1']
+            user.set_password(raw_password)  # Hash the password
 
-            raw_password = form.cleaned_data.get('password')
-            user.set_password(raw_password)
+            account_type = form.cleaned_data['account_type'].capitalize()
 
-            account_type_raw = form.cleaned_data['account_type']
-            account_type = account_type_raw.capitalize()  # Fix the capitalization (e.g., 'Admin', 'Cashier')
-
-            # Set staff/superuser flags if admin
             if account_type == 'Admin':
-                user.is_staff = True  # appears in Django Admin
-                #user.is_superuser = True  # optional if you want full admin privileges
+                user.is_staff = True  # Admin flag
 
-            user.save()
+            user.save()  # Now save the user with the hashed password
 
-            # Save to UserProfile
+            # Create the UserProfile after user is saved
             UserProfile.objects.create(user=user, account_type=account_type)
 
-            # Show proper success message
-            if account_type == 'Admin':
-                messages.success(request, 'Admin account created successfully!')
-            else:
-                messages.success(request, 'Cashier account created successfully!')
-
+            # Show success message
+            messages.success(request, f"{account_type} account created successfully!")
             return redirect('user_management')
         else:
             messages.error(request, 'Form has errors. Please check the inputs.')
@@ -465,6 +456,7 @@ def user_management(request):
         except User.DoesNotExist:
             messages.error(request, "User not found.")
 
+    # Retrieve all users and their associated profiles
     users = User.objects.all().select_related('userprofile')
     return render(request, 'user_management.html', {'form': form, 'users': users})
 
